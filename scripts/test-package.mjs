@@ -90,7 +90,7 @@ try {
   // Check the installed declarations, not repository-relative imports.
   await writeFile(
     join(consumer, "consumer.ts"),
-    `import { CodexAgent } from '@open-grove/agent-host/codex';\nimport { FileBindingStore } from '@open-grove/agent-host';\nconst agent = new CodexAgent({ bindings: new FileBindingStore('state') });\nfor await (const e of agent.run({ sessionId: 's', cwd: '.', input: 'hi', instructions: '' })) console.log(e.type);\nawait agent.close();\n`,
+    `import { AcpAgent } from '@open-grove/agent-host/acp';\nimport { ClaudeAgent, ClaudeQueryHost } from '@open-grove/agent-host/claude';\nimport { PiAgent } from '@open-grove/agent-host/pi';\nimport { HermesAgent } from '@open-grove/agent-host/hermes';\nimport { OpenClawAgent } from '@open-grove/agent-host/openclaw';\nconst adapters = [AcpAgent, ClaudeAgent, ClaudeQueryHost, PiAgent, HermesAgent, OpenClawAgent];\nimport { CodexAgent } from '@open-grove/agent-host/codex';\nimport { FileBindingStore } from '@open-grove/agent-host';\nconst agent = new CodexAgent({ bindings: new FileBindingStore('state') });\nfor await (const e of agent.run({ sessionId: 's', cwd: '.', input: 'hi', instructions: '' })) console.log(e.type);\nawait agent.close();\n`,
   );
   execFileSync(
     process.execPath,

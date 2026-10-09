@@ -4,9 +4,9 @@
 
 Agent Host is an open-source project to extract OpenGrove's native Agent integration into a product-independent package. A product supplies its context, tools and interaction handlers; Agent Host connects to the selected Agent and reports its work.
 
-**Status: the first Codex adapter and independent file editor are implemented on the extraction branch.** The alpha package installs from a built archive; it is not yet published to npm. The other six Kernel adapters and Rivet evaluation remain pending. `agent-host` is the working project name.
+**Status: all seven native integrations and the independent file editor are implemented on the extraction branch.** OpenGrove consumes the same alpha archive. The package is public source and installs from a built archive; it is not yet published to npm. `agent-host` is the working project name.
 
-The first implementation provides native sessions, streaming, scoped product tools, approval/question callbacks, cancellation, steering and compaction. It has no OpenGrove runtime dependency. See [installation, API and verification limits](docs/api.md).
+The adapters provide native sessions, streaming, scoped product tools, approval/question callbacks, cancellation, steering and compaction. It has no OpenGrove runtime dependency. See [installation, API and verification limits](docs/api.md).
 
 ## Responsibilities
 
@@ -29,7 +29,7 @@ Both consumers must use the same package API. The editor is a reference integrat
 
 All seven existing Kernel integrations are in scope: Codex, Claude Agent, Pi, OpenCode, Kimi Code, Hermes and OpenClaw. Updates target stable upstream releases, with exact tested versions recorded. New upstream capabilities are reviewed against the public integration surface and exposed only with implementation and verification evidence.
 
-Rivet Sandbox Agent is evaluated as a replaceable execution backend. Its recovery and interaction semantics must pass the same consumer tests before replacing an existing native path.
+Rivet Sandbox Agent was evaluated as a replaceable backend. Its default stale-connection recovery recreates a native conversation and replays history, so the native paths remain. See the [decision and reproducible SDK evaluation](docs/rivet.md).
 
 See [scope and acceptance](docs/scope.md) and [Kernel upgrade targets](docs/kernel-support.md).
 

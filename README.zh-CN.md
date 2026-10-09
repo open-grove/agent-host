@@ -4,7 +4,7 @@
 
 把 OpenGrove 已有的 Agent 接入能力拆成独立开源项目。产品提供自己的上下文、工具和用户交互，接入层负责连接 Agent、驱动工作并返回过程和结果。
 
-**当前状态：第一条 Codex 链路和独立文件编辑器已实现在拆分分支上。** 可以安装构建出的 alpha 包，还未发布到 npm。其余六个内核和 Rivet 评估仍待完成。 `agent-host` 是项目工作名。
+**当前状态：七个内核的共享接入和独立文件编辑器均已实现在拆分分支上。** OpenGrove 使用同一个 alpha 安装包。源码公开，可从构建包安装，还未发布到 npm。`agent-host` 是项目工作名。
 
 安装、接口和验证范围见 [使用说明](docs/api.md)。已抽出的能力包括原生会话、流式事件、产品工具、审批与提问回调、取消、运行中补充指令和压缩会话；包本身不依赖 OpenGrove。
 
@@ -29,9 +29,9 @@ Agent 继续拥有自己的模型循环、原生工具、对话记录和原生�
 
 Codex、Claude Agent、Pi、OpenCode、Kimi Code、Hermes、OpenClaw 七个现有内核都纳入范围。逐个核对最新稳定版、检查公开接口变化、实现需要接入的新能力，并记录实际验证版本。
 
-Rivet Sandbox Agent 作为候选执行后端接受同一套测试；通过会话恢复、工具和人工交互验证后，才决定替换哪些原生实现。
+Rivet Sandbox Agent 已完成恢复语义评估：默认在连接失效后新建原生会话，再补入历史文本，因此本次保留各内核原生接入。见 [具体依据和可复现验证](docs/rivet.md)。
 
-详细范围见 [scope and acceptance](docs/scope.md)，版本目标见 [Kernel upgrade targets](docs/kernel-support.md)。
+详细范围见 [scope and acceptance](docs/scope.md)，版本与验证范围见 [Kernel support](docs/kernel-support.md)。
 
 实施跟踪：[拆分与两个使用方验收](https://github.com/open-grove/agent-host/issues/1)、[内核升级与新能力接入](https://github.com/open-grove/agent-host/issues/2)、[Rivet 后端验证](https://github.com/open-grove/agent-host/issues/3)。
 
