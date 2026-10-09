@@ -28,6 +28,14 @@
     "./codex": {
       "types": "./dist/codex/index.d.ts",
       "import": "./dist/codex/index.js"
+    },
+    "./environment/windows-discovery": {
+      "types": "./dist/environment/windows-discovery.d.ts",
+      "import": "./dist/environment/windows-discovery.js"
+    },
+    "./environment/windows-query": {
+      "types": "./dist/environment/windows-query.d.ts",
+      "import": "./dist/environment/windows-query.js"
     }
   },
   "scripts": {

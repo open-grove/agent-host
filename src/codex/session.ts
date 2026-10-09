@@ -339,13 +339,17 @@ export class CodexAgent {
       const done = new Promise<void>((resolveDone) => {
         terminal = resolveDone;
       });
+      let confirmTurn: () => void = () => {};
+      const turnReady = new Promise<void>((resolveReady) => {
+        confirmTurn = resolveReady;
+      });
       const pending: Array<{ method: string; params?: JsonValue }> = [];
       let interrupt = () => {};
       const onNotification = (notification: {
         method: string;
         params?: JsonValue;
       }) => {
-        if (settled) return;
+        if (settled || !nativeStarted) return;
         const p = object(notification.params);
         if (p?.threadId !== threadId) return;
         if (
@@ -356,6 +360,7 @@ export class CodexAgent {
           const startedTurn = object(p.turn);
           if (typeof startedTurn?.id === "string") {
             context.turnId = startedTurn.id;
+            confirmTurn();
             for (const previous of pending.splice(0)) onNotification(previous);
             if (signal.aborted) interrupt();
           }
@@ -435,12 +440,12 @@ export class CodexAgent {
       cleanups.push(
         client.addRequestHandler(async (nativeRequest) => {
           const p = object(nativeRequest.params);
-          if (
-            p?.threadId !== context.threadId ||
-            (p.turnId !== undefined &&
-              context.turnId &&
-              p.turnId !== context.turnId)
-          )
+          if (!nativeStarted || p?.threadId !== context.threadId)
+            return undefined;
+          // A request can precede the turn/start response. Wait for the native
+          // identity before dispatching; an old turn must never execute a tool.
+          if (!context.turnId) await untilAborted(turnReady, signal, undefined);
+          if (p.turnId !== undefined && p.turnId !== context.turnId)
             return undefined;
           const fallback =
             nativeRequest.method === "item/tool/requestUserInput"
@@ -614,6 +619,7 @@ export class CodexAgent {
           : context.turnId;
       if (!context.turnId && request.mode !== "compact")
         throw new Error("native_turn_id_missing");
+      if (context.turnId) confirmTurn();
       if (context.turnId)
         for (const notification of pending.splice(0))
           onNotification(notification);

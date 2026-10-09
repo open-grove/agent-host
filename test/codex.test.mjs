@@ -17,14 +17,44 @@ test("steering targets the active native turn and cancellation ends it", async (
   const agent = await agentTest(t);
   const controller = new AbortController();
   const events = [];
-  for await (const event of agent.run({ ...base, input: "wait", signal: controller.signal })) {
+  for await (const event of agent.run({
+    ...base,
+    input: "wait",
+    signal: controller.signal,
+  })) {
     events.push(event);
-    if (event.type === "native.notification" && event.notification.method === "turn/started") {
+    if (
+      event.type === "native.notification" &&
+      event.notification.method === "turn/started"
+    ) {
       await agent.steer(base.sessionId, "Focus on the introduction");
       controller.abort();
     }
   }
   assert.equal(terminal(events).status, "cancelled");
+});
+test("requests arriving before the turn acknowledgement cannot execute a stale turn's tool", async (t) => {
+  const agent = await agentTest(t);
+  const calls = [];
+  const events = await Array.fromAsync(
+    agent.run({
+      ...base,
+      input: "stale-tool",
+      tools: [
+        {
+          name: "edit_document",
+          description: "Edit",
+          inputSchema: { type: "object" },
+          async execute(input, context) {
+            calls.push([input.text, context.turnId]);
+            return { success: true, contentItems: [] };
+          },
+        },
+      ],
+    }),
+  );
+  assert.deepEqual(calls, [["Current write", "turn-2"]]);
+  assert.equal(terminal(events).status, "completed");
 });
 const response = (events) =>
   events.find((e) => e.type === "model.response").text;

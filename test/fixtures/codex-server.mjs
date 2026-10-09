@@ -60,6 +60,26 @@ createInterface({ input: process.stdin }).on("line", async (line) => {
   const fullInput = p.input?.map((i) => i.text ?? "").join("\n") ?? "compact";
   const input = p.input?.at(-1)?.text ?? "compact";
   active.set(threadId, turnId);
+  if (input === "stale-tool") {
+    const stale = ask("item/tool/call", {
+      threadId,
+      turnId: "previous-turn",
+      callId: "stale-call",
+      tool: "edit_document",
+      arguments: { text: "Stale write" },
+    });
+    const current = ask("item/tool/call", {
+      threadId,
+      turnId,
+      callId: "current-call",
+      tool: "edit_document",
+      arguments: { text: "Current write" },
+    });
+    setTimeout(() => reply(m.id, { turn: { id: turnId } }), 20);
+    await Promise.all([stale, current]);
+    finish(threadId, turnId);
+    return;
+  }
   if (m.method === "thread/compact/start") {
     reply(m.id, {});
     notify("turn/started", {
@@ -82,7 +102,10 @@ createInterface({ input: process.stdin }).on("line", async (line) => {
   if (input === "never-acknowledge") return;
   if (input === "wait") {
     reply(m.id, { turn: { id: turnId } });
-    notify("turn/started", { threadId, turn: { id: turnId, status: "inProgress" } });
+    notify("turn/started", {
+      threadId,
+      turn: { id: turnId, status: "inProgress" },
+    });
     return;
   }
   if (input === "slow") {
