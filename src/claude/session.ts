@@ -1,9 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import {
-  createSdkMcpServer,
-  tool as sdkTool,
-  type Options,
-} from "@anthropic-ai/claude-agent-sdk";
+import { type Options } from "@anthropic-ai/claude-agent-sdk";
 import { AsyncEventQueue } from "../async-event-queue.js";
 import {
   MemoryBindingStore,
@@ -15,7 +11,7 @@ import {
 } from "../agent.js";
 import type { JsonObject, JsonValue } from "../types.js";
 import { ClaudeQueryHost, type ClaudeQueryFunction } from "./query.js";
-import { jsonSchemaToZodShape } from "./schema.js";
+import { createClaudeMcpServer } from "./schema.js";
 
 export interface ClaudeRunRequest {
   sessionId: string;
@@ -128,56 +124,56 @@ export class ClaudeAgent {
       let callSequence = 0;
       const toolNames = new Set(request.tools?.map((tool) => tool.name) ?? []);
       const mcp = request.tools?.length
-        ? createSdkMcpServer({
+        ? createClaudeMcpServer({
             name: "agent_host",
             version: "0.1.0",
-            tools: request.tools.map((tool) =>
-              sdkTool(
-                tool.name,
-                tool.description,
-                jsonSchemaToZodShape(object(tool.inputSchema)),
-                async (input) => {
-                  const callId = `${runId}:tool:${++callSequence}`;
-                  context.signal.throwIfAborted();
-                  if (!tool.execute) throw new Error("tool_not_available");
-                  emit({
-                    type: "tool.started",
-                    runId,
-                    callId,
-                    tool: tool.name,
-                    input: json(input),
-                  });
-                  const result = await abortable(
-                    tool.execute(json(input), { ...context, callId }),
-                    context.signal,
-                  ).catch((error) => ({
-                    success: false,
-                    contentItems: [
-                      { type: "inputText" as const, text: String(error) },
-                    ],
-                  }));
-                  emit({
-                    type: "tool.finished",
-                    runId,
-                    callId,
-                    tool: tool.name,
-                    result,
-                  });
-                  return {
-                    isError: !result.success,
-                    content: result.contentItems.map((item) =>
-                      item.type === "inputText"
-                        ? { type: "text" as const, text: item.text }
-                        : {
-                            type: "resource_link" as const,
-                            uri: item.imageUrl,
-                            name: "image",
-                          },
-                    ),
-                  };
-                },
-              ),
-            ),
+            tools: request.tools.map((tool) => ({
+              name: tool.name,
+              description: tool.description,
+              inputSchema: object(tool.inputSchema),
+            })),
+            call: async (name, input) => {
+              const tool = request.tools!.find((tool) => tool.name === name);
+              if (!tool) throw new Error("tool_not_available");
+              const callId = `${runId}:tool:${++callSequence}`;
+              context.signal.throwIfAborted();
+              if (!tool.execute) throw new Error("tool_not_available");
+              emit({
+                type: "tool.started",
+                runId,
+                callId,
+                tool: tool.name,
+                input: json(input),
+              });
+              const result = await abortable(
+                tool.execute(json(input), { ...context, callId }),
+                context.signal,
+              ).catch((error) => ({
+                success: false,
+                contentItems: [
+                  { type: "inputText" as const, text: String(error) },
+                ],
+              }));
+              emit({
+                type: "tool.finished",
+                runId,
+                callId,
+                tool: tool.name,
+                result,
+              });
+              return {
+                isError: !result.success,
+                content: result.contentItems.map((item) =>
+                  item.type === "inputText"
+                    ? { type: "text" as const, text: item.text }
+                    : {
+                        type: "resource_link" as const,
+                        uri: item.imageUrl,
+                        name: "image",
+                      },
+                ),
+              };
+            },
           })
         : undefined;
       const nativePermission = native.canUseTool;
@@ -227,7 +223,14 @@ export class ClaudeAgent {
                       ? "AskUserQuestion"
                       : "permission",
                   params: object(
-                    json({ name, input, toolUseID: options.toolUseID }),
+                    json({
+                      name,
+                      input,
+                      toolUseID: options.toolUseID,
+                      mcpServer: options.mcpServer,
+                      defaultToNo: options.defaultToNo,
+                      suppressAlwaysAllowRule: options.suppressAlwaysAllowRule,
+                    }),
                   ),
                 },
                 context,

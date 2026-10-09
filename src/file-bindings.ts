@@ -12,6 +12,11 @@ export class FileBindingStore implements BindingStore {
       `${createHash("sha256").update(id).digest("hex")}.json`,
     );
   }
+  async delete(id: string): Promise<void> {
+    await unlink(this.path(id)).catch((error) => {
+      if (error.code !== "ENOENT") throw error;
+    });
+  }
   async get(id: string): Promise<SessionBinding | undefined> {
     let source: string;
     try {

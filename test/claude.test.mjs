@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ClaudeAgent } from "../dist/claude/index.js";
+import { ClaudeAgent, createClaudeMcpServer } from "../dist/claude/index.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { MemoryBindingStore } from "../dist/index.js";
 import { createClaudeQueryFixture } from "./fixtures/claude-query.mjs";
 const base = {
@@ -10,6 +12,40 @@ const base = {
   context: "Current contents",
   input: "hello",
 };
+
+test("Claude MCP preserves JSON Schema constraints and rejects invalid input before the product runs", async () => {
+  let calls = 0;
+  const schema = {
+    type: "object",
+    properties: { text: { type: "string", minLength: 3, pattern: "^[A-Z]" } },
+    required: ["text"],
+    additionalProperties: false,
+  };
+  const server = createClaudeMcpServer({
+    name: "schema-probe",
+    tools: [{ name: "edit", description: "Edit", inputSchema: schema }],
+    async call() {
+      calls++;
+      return { content: [] };
+    },
+  });
+  const [left, right] = InMemoryTransport.createLinkedPair();
+  const client = new Client({ name: "schema-consumer", version: "1" });
+  await server.instance.connect(right);
+  await client.connect(left);
+  try {
+    const listed = await client.listTools();
+    assert.equal(listed.tools[0].inputSchema.properties.text.minLength, 3);
+    const invalid = await client.callTool({
+      name: "edit",
+      arguments: { text: "x" },
+    });
+    assert.equal(invalid.isError, true);
+    assert.equal(calls, 0);
+  } finally {
+    await client.close();
+  }
+});
 function agent(t, options = {}) {
   const a = new ClaudeAgent({ query: createClaudeQueryFixture(), ...options });
   t.after(() => a.close());

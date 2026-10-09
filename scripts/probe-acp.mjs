@@ -8,8 +8,8 @@ import { resolve, join } from "node:path";
 import { AcpAgent } from "../dist/acp/index.js";
 
 const kernel = process.argv[2];
-if (!["opencode", "kimi"].includes(kernel))
-  throw new Error("Usage: node scripts/probe-acp.mjs opencode|kimi");
+if (!["opencode", "kimi", "claude"].includes(kernel))
+  throw new Error("Usage: node scripts/probe-acp.mjs opencode|kimi|claude");
 const consumer = await mkdtemp(join(tmpdir(), "agent-host-native-editor-"));
 execFileSync("npm", ["pack", "--pack-destination", consumer, "--silent"], {
   stdio: "pipe",
@@ -34,21 +34,27 @@ const { createEditor } = await import(
   pathToFileURL(join(consumer, "editor.mjs"))
 );
 const command =
-  process.env.AGENT_HOST_COMMAND ?? resolve(`node_modules/.bin/${kernel}`);
+  process.env.AGENT_HOST_COMMAND ??
+  (kernel === "claude" ? undefined : resolve(`node_modules/.bin/${kernel}`));
 const directory = resolve(`.local/${kernel}-probe-${Date.now()}`);
 await mkdir(directory, { recursive: true });
-const preflight = new AcpAgent({
-  command,
-  cwd: directory,
-  elicitation: { form: {} },
-});
-try {
-  const client = await preflight.connect();
-  console.log(
-    JSON.stringify({ kernel, capabilities: preflight.getCapabilities(client) }),
-  );
-} finally {
-  await preflight.close();
+if (kernel !== "claude") {
+  const preflight = new AcpAgent({
+    command,
+    cwd: directory,
+    elicitation: { form: {} },
+  });
+  try {
+    const client = await preflight.connect();
+    console.log(
+      JSON.stringify({
+        kernel,
+        capabilities: preflight.getCapabilities(client),
+      }),
+    );
+  } finally {
+    await preflight.close();
+  }
 }
 let allow = false;
 let calls = 0;
