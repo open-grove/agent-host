@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { join } from "node:path";
-import type { BindingStore, SessionBinding } from "./codex/session.js";
+import type { BindingStore, SessionBinding } from "./agent.js";
 
 /** Atomic per-session files. Applications must enforce one writer per session. */
 export class FileBindingStore implements BindingStore {

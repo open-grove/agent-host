@@ -5,7 +5,9 @@ const ui = createInterface({ input: process.stdin, output: process.stdout });
 let active;
 const editor = await createEditor({
   directory: process.argv[2] ?? ".local/editor",
-  command: process.env.AGENT_HOST_CODEX ?? "codex",
+  kernel: process.env.AGENT_HOST_KERNEL ?? "codex",
+  command: process.env.AGENT_HOST_COMMAND ?? process.env.AGENT_HOST_CODEX,
+  model: process.env.AGENT_HOST_MODEL,
   approve: async (request, signal) =>
     (
       await ui.question(`${JSON.stringify(request, null, 2)}\nAllow? [y/N] `, {

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createClaudeQueryFixture } from "../test/fixtures/claude-query.mjs";
 import { execFileSync } from "node:child_process";
 import { cp, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
@@ -119,6 +120,100 @@ try {
   console.log(`Consumer retained at ${consumer}`);
 } finally {
   await editor.close();
+}
+
+// A second protocol uses the very same installed editor and product tool.
+for (const kernel of ["opencode", "kimi"]) {
+  const directory = join(consumer, `${kernel}-workspace`);
+  const command = resolve("test/fixtures/acp-server.mjs");
+  let editor = await createEditor({
+    directory,
+    kernel,
+    command,
+    args: [],
+    approve: async () => true,
+  });
+  try {
+    const approved = await Array.fromAsync(editor.run("tool"));
+    assert.equal(approved.at(-1).outcome.status, "completed");
+    assert.equal(await editor.read(), "Saved via ACP");
+    const nativeId = approved.find(
+      (event) => event.type === "session.bound",
+    ).threadId;
+    await editor.close();
+    editor = await createEditor({
+      directory,
+      kernel,
+      command,
+      args: [],
+      approve: async () => false,
+    });
+    const rejected = await Array.fromAsync(editor.run("tool"));
+    assert.equal(
+      rejected.find((event) => event.type === "session.bound").threadId,
+      nativeId,
+    );
+    assert.equal(
+      rejected.find((event) => event.type === "tool.finished").result.success,
+      false,
+    );
+    assert.equal(await editor.read(), "Saved via ACP");
+    const controller = new AbortController();
+    let outcome;
+    for await (const event of editor.run("wait", {
+      signal: controller.signal,
+    })) {
+      if (event.type === "assistant.delta") controller.abort();
+      if (event.type === "turn.finished") outcome = event.outcome;
+    }
+    assert.equal(outcome.status, "cancelled");
+    console.log(
+      `PASS installed ${kernel} editor: MCP, approve/reject, cancellation and restart (protocol fixture)`,
+    );
+  } finally {
+    await editor.close();
+  }
+}
+
+{
+  const directory = join(consumer, "claude-workspace");
+  const query = createClaudeQueryFixture();
+  let editor = await createEditor({
+    directory,
+    kernel: "claude",
+    adapterOptions: { query },
+    approve: async () => true,
+  });
+  try {
+    const approved = await Array.fromAsync(editor.run("fixture tool"));
+    assert.equal(approved.at(-1).outcome.status, "completed");
+    assert.equal(await editor.read(), "Saved via Claude");
+    const threadId = approved.find(
+      (event) => event.type === "session.bound",
+    ).threadId;
+    await editor.close();
+    editor = await createEditor({
+      directory,
+      kernel: "claude",
+      adapterOptions: { query },
+      approve: async () => false,
+    });
+    const rejected = await Array.fromAsync(editor.run("fixture tool"));
+    assert.equal(
+      rejected.find((event) => event.type === "session.bound").threadId,
+      threadId,
+    );
+    assert.equal(
+      rejected.find((event) => event.type === "tool.finished").result.success,
+      false,
+    );
+    assert.equal(await editor.read(), "Saved via Claude");
+    console.log(
+      "PASS installed Claude editor: SDK MCP approve/reject and native binding restart (SDK seam fixture)",
+    );
+  } finally {
+    await editor.close();
+  }
 }
 
 if (process.env.AGENT_HOST_NATIVE_PROBE === "1") {

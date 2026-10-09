@@ -1,3 +1,20 @@
+import {
+  MemoryBindingStore,
+  type BindingStore,
+  type InteractionContext,
+  type ProductTool,
+  type TurnOutcome,
+  type AgentEvent as CodexEvent,
+} from "../agent.js";
+export {
+  MemoryBindingStore,
+  type BindingStore,
+  type SessionBinding,
+  type InteractionContext,
+  type ProductTool,
+  type TurnOutcome,
+  type AgentEvent as CodexEvent,
+} from "../agent.js";
 import { createHash, randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { AsyncEventQueue } from "../async-event-queue.js";
@@ -10,39 +27,6 @@ import type {
   ServerRequestHandler,
 } from "./types.js";
 
-export interface SessionBinding {
-  threadId: string;
-  fingerprint: string;
-}
-/** One writer per product session. A store failure prevents starting the turn. */
-export interface BindingStore {
-  get(sessionId: string): Promise<SessionBinding | undefined>;
-  set(sessionId: string, binding: SessionBinding): Promise<void>;
-}
-export class MemoryBindingStore implements BindingStore {
-  private readonly bindings = new Map<string, SessionBinding>();
-  async get(id: string) {
-    return this.bindings.get(id);
-  }
-  async set(id: string, binding: SessionBinding) {
-    this.bindings.set(id, { ...binding });
-  }
-}
-export interface InteractionContext {
-  sessionId: string;
-  runId: string;
-  threadId: string;
-  turnId: string;
-  signal: AbortSignal;
-}
-export interface ProductTool extends CodexDynamicToolSpec {
-  /** Codex 0.162 native tool namespace. The function name stays unchanged. */
-  namespace?: string;
-  execute?(
-    input: JsonValue,
-    context: InteractionContext & { callId: string },
-  ): Promise<CodexDynamicToolCallResponse>;
-}
 export interface CodexRunRequest {
   sessionId: string;
   runId?: string;
@@ -69,39 +53,6 @@ export interface CodexRunRequest {
     context: InteractionContext,
   ): Promise<void>;
 }
-export interface TurnOutcome {
-  status: "completed" | "cancelled" | "failed";
-  error?: string;
-  outcomeUnknown?: boolean;
-}
-export type CodexEvent =
-  | { type: "turn.started"; runId: string }
-  | { type: "session.bound"; runId: string; threadId: string; resumed: boolean }
-  | {
-      type: "native.notification";
-      runId: string;
-      notification: { method: string; params?: JsonValue };
-      threadId: string;
-      turnId: string;
-    }
-  | { type: "assistant.delta"; runId: string; text: string }
-  | {
-      type: "tool.started";
-      runId: string;
-      callId: string;
-      tool: string;
-      input: JsonValue;
-    }
-  | {
-      type: "tool.finished";
-      runId: string;
-      callId: string;
-      tool: string;
-      result: CodexDynamicToolCallResponse;
-    }
-  | { type: "model.response"; runId: string; text: string }
-  | { type: "turn.finished"; runId: string; outcome: TurnOutcome };
-
 export interface CodexAgentOptions {
   command?: string;
   args?: string[];

@@ -36,6 +36,23 @@
     "./environment/windows-query": {
       "types": "./dist/environment/windows-query.d.ts",
       "import": "./dist/environment/windows-query.js"
+    },
+    "./transport": {
+      "types": "./dist/transport/stdio-json-rpc-client.d.ts",
+      "import": "./dist/transport/stdio-json-rpc-client.js"
+    },
+    "./acp": {
+      "types": "./dist/acp/index.d.ts",
+      "import": "./dist/acp/index.js"
+    },
+    "./acp/mcp-server": "./dist/acp/mcp-server.js",
+    "./claude": {
+      "types": "./dist/claude/index.d.ts",
+      "import": "./dist/claude/index.js"
+    },
+    "./native-session-lock": {
+      "types": "./dist/native-session-lock.d.ts",
+      "import": "./dist/native-session-lock.js"
     }
   },
   "scripts": {
@@ -46,12 +63,17 @@
     "probe:codex": "node scripts/probe-codex.mjs"
   },
   "dependencies": {
-    "cross-spawn": "7.0.6"
+    "@anthropic-ai/claude-agent-sdk": "0.3.263",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "cross-spawn": "7.0.6",
+    "zod": "4.1.12"
   },
   "devDependencies": {
+    "@moonshot-ai/kimi-code": "2.1.1",
+    "@openai/codex": "0.162.0",
     "@types/cross-spawn": "6.0.6",
     "@types/node": "24.10.1",
-    "typescript": "5.9.3",
-    "@openai/codex": "0.162.0"
+    "opencode-ai": "1.18.35",
+    "typescript": "5.9.3"
   }
 }
