@@ -1,0 +1,11 @@
+{
+  "name": "agent-host-file-editor-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node cli.mjs"
+  },
+  "dependencies": {
+    "@open-grove/agent-host": "0.1.0-alpha.1"
+  }
+}

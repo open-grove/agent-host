@@ -1,12 +1,12 @@
 # Kernel upgrade targets
 
-These are stable upstream targets checked on **2026-10-09**, not a support claim. **No Kernel has been certified in this new project yet.** Targets are refreshed before each adapter migration; releases record exact tested versions rather than an unbounded promise to support "latest".
+These are stable upstream targets checked on **2026-10-09**, not a support claim. **Only the Codex paths listed below have native probe evidence; the remaining Kernels are pending.** Targets are refreshed before each adapter migration; releases record exact tested versions rather than an unbounded promise to support "latest".
 
 The current integration baselines below come from OpenGrove's dependency pins and [Kernel source reference](https://github.com/open-grove/opengrove/blob/main/docs/reference/KERNEL_SOURCES.md). Its individual capability probes may have used earlier versions; these numbers do not certify every feature.
 
 | Kernel | OpenGrove integration baseline | Stable target | Verification |
 | --- | --- | --- | --- |
-| Codex | 0.153.4 | [0.162.0](https://github.com/openai/codex/releases/tag/rust-v0.162.0) | Pending |
+| Codex | 0.153.4 | [0.162.0](https://github.com/openai/codex/releases/tag/rust-v0.162.0) | macOS arm64: native tool, restart continuation and compaction passed; [limits](api.md#validation) |
 | Claude Agent | SDK 0.3.263 / engine 2.1.263 | SDK [0.3.295](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk/v/0.3.295) / engine [2.1.295](https://github.com/anthropics/claude-code/releases/tag/v2.1.295) | Pending |
 | Pi | pi-agent-core / pi-ai 0.85.1 | [1.1.0](https://github.com/earendil-works/pi/releases/tag/v1.1.0) | Pending |
 | OpenCode | 1.18.29 | [1.18.35](https://github.com/anomalyco/opencode/releases/tag/v1.18.35) | Pending |

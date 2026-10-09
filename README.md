@@ -4,9 +4,11 @@
 
 Agent Host is an open-source project to extract OpenGrove's native Agent integration into a product-independent package. A product supplies its context, tools and interaction handlers; Agent Host connects to the selected Agent and reports its work.
 
-**Status: scope defined; extraction and Kernel upgrades have not shipped. There is no released runtime package yet.** `agent-host` is the working project name.
+**Status: the first Codex adapter and independent file editor are implemented on the extraction branch.** The alpha package installs from a built archive; it is not yet published to npm. The other six Kernel adapters and Rivet evaluation remain pending. `agent-host` is the working project name.
 
-## Intended responsibilities
+The first implementation provides native sessions, streaming, scoped product tools, approval/question callbacks, cancellation, steering and compaction. It has no OpenGrove runtime dependency. See [installation, API and verification limits](docs/api.md).
+
+## Responsibilities
 
 - Connect to native Agents and manage their execution lifecycle.
 - Create and continue sessions, stream progress, cancel work and report recovery outcomes.
@@ -35,7 +37,7 @@ Tracked work: [extraction and two consumers](https://github.com/open-grove/agent
 
 ## Existing work
 
-The extraction will review and reuse relevant work from [OpenGrove](https://github.com/open-grove/opengrove), especially the [external-product integration proposal](https://github.com/open-grove/opengrove/pull/126) and [native context lifecycle work](https://github.com/open-grove/opengrove/pull/123). These are dependencies to review, not claims that either proposal is merged or that its reported tests have been rerun here.
+The extraction reviews and reuses relevant work from [OpenGrove](https://github.com/open-grove/opengrove), especially the [external-product integration proposal](https://github.com/open-grove/opengrove/pull/126) and [native context lifecycle work](https://github.com/open-grove/opengrove/pull/123). These are dependencies to review, not claims that either proposal is merged or that its reported tests have been rerun here.
 
 ## License
 
