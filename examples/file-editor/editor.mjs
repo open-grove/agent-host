@@ -1,5 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { OpenClawAgent } from "@open-grove/agent-host/openclaw";
+import { HermesAgent } from "@open-grove/agent-host/hermes";
 import { PiAgent } from "@open-grove/agent-host/pi";
 import { ClaudeAgent } from "@open-grove/agent-host/claude";
 import { AcpAgent } from "@open-grove/agent-host/acp";
@@ -31,22 +33,36 @@ export async function createEditor({
   const Agent =
     kernel === "codex"
       ? CodexAgent
-      : kernel === "pi"
-        ? PiAgent
-        : kernel === "claude"
-          ? ClaudeAgent
-          : ["opencode", "kimi", "acp"].includes(kernel)
-            ? AcpAgent
-            : undefined;
+      : kernel === "openclaw"
+        ? OpenClawAgent
+        : kernel === "hermes"
+          ? HermesAgent
+          : kernel === "pi"
+            ? PiAgent
+            : kernel === "claude"
+              ? ClaudeAgent
+              : ["opencode", "kimi", "acp"].includes(kernel)
+                ? AcpAgent
+                : undefined;
   if (!Agent) throw new Error(`Unsupported kernel: ${kernel}`);
   const agent = new Agent({
     ...(kernel === "pi"
       ? { cwd, sessionRoot: join(cwd, ".agent-host", "pi-native") }
       : {}),
+    ...(kernel === "hermes" ? { exclusiveProfile: true } : {}),
     ...adapterOptions,
     command: command ?? (kernel === "claude" ? undefined : kernel),
     args,
-    env,
+    env:
+      kernel === "hermes"
+        ? {
+            ...process.env,
+            ...env,
+            HERMES_HOME:
+              env?.HERMES_HOME ?? join(cwd, ".agent-host", "hermes-home"),
+          }
+        : env,
+    cwd,
     ...(kernel !== "codex" ? { elicitation: { form: {} } } : {}),
     bindings:
       bindings ?? new FileBindingStore(join(cwd, ".agent-host", kernel)),
@@ -113,6 +129,31 @@ export async function createEditor({
           ...thread,
         },
         async onRequest(request, context) {
+          if (request.method === "approval")
+            return {
+              choice: (await approve(request, context.signal))
+                ? "once"
+                : "deny",
+            };
+          if (request.method === "clarify") {
+            if (!ask) return {};
+            const answers = await ask(
+              request.params.questions.map((q) => ({
+                id: q.qid,
+                question: q.question,
+              })),
+              context.signal,
+            );
+            return {
+              answers: Object.fromEntries(
+                Object.entries(answers).map(([id, value]) => [
+                  id,
+                  value.answers.join(", "),
+                ]),
+              ),
+            };
+          }
+          if (["sudo", "secret"].includes(request.method)) return { value: "" };
           if (request.method === "permission")
             return {
               behavior: (await approve(request, context.signal))

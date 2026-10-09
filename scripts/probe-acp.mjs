@@ -8,8 +8,12 @@ import { resolve, join } from "node:path";
 import { AcpAgent } from "../dist/acp/index.js";
 
 const kernel = process.argv[2];
-if (!["opencode", "kimi", "claude", "pi"].includes(kernel))
-  throw new Error("Usage: node scripts/probe-acp.mjs opencode|kimi|claude|pi");
+if (
+  !["opencode", "kimi", "claude", "pi", "hermes", "openclaw"].includes(kernel)
+)
+  throw new Error(
+    "Usage: node scripts/probe-acp.mjs opencode|kimi|claude|pi|hermes|openclaw",
+  );
 const consumer = await mkdtemp(join(tmpdir(), "agent-host-native-editor-"));
 execFileSync("npm", ["pack", "--pack-destination", consumer, "--silent"], {
   stdio: "pipe",
@@ -38,7 +42,7 @@ const command =
   (kernel === "claude" ? undefined : resolve(`node_modules/.bin/${kernel}`));
 const directory = resolve(`.local/${kernel}-probe-${Date.now()}`);
 await mkdir(directory, { recursive: true });
-if (!["claude", "pi"].includes(kernel)) {
+if (!["claude", "pi", "hermes", "openclaw"].includes(kernel)) {
   const preflight = new AcpAgent({
     command,
     cwd: directory,
@@ -81,14 +85,26 @@ const piOptions =
 const options = {
   directory,
   adapterOptions:
-    kernel === "pi"
-      ? piOptions
-      : kernel === "claude" &&
-          process.env.AGENT_HOST_CLAUDE_LOCAL_PROVIDER === "1"
-        ? { native: { settingSources: ["local"] } }
-        : {},
+    kernel === "openclaw"
+      ? {
+          url: process.env.AGENT_HOST_OPENCLAW_URL,
+          token: process.env.AGENT_HOST_OPENCLAW_TOKEN,
+        }
+      : kernel === "pi"
+        ? piOptions
+        : kernel === "claude" &&
+            process.env.AGENT_HOST_CLAUDE_LOCAL_PROVIDER === "1"
+          ? { native: { settingSources: ["local"] } }
+          : {},
   kernel,
   command,
+  args: process.env.AGENT_HOST_ARGS
+    ? JSON.parse(process.env.AGENT_HOST_ARGS)
+    : undefined,
+  env:
+    kernel === "hermes"
+      ? { ...process.env, HERMES_HOME: process.env.AGENT_HOST_HERMES_HOME }
+      : undefined,
   ask: async (items) => {
     questions++;
     return Object.fromEntries(
@@ -113,6 +129,14 @@ const run = async (input) => {
   );
   const outcome = events.at(-1)?.outcome;
   assert.equal(outcome?.status, "completed", JSON.stringify(outcome));
+  if (process.env.AGENT_HOST_PROBE_DEBUG === "1")
+    console.log(
+      events.filter((event) =>
+        ["model.response", "tool.started", "tool.finished"].includes(
+          event.type,
+        ),
+      ),
+    );
   return events;
 };
 try {

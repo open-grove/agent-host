@@ -18,7 +18,8 @@
     "README.md",
     "README.zh-CN.md",
     "docs",
-    "examples/file-editor"
+    "examples/file-editor",
+    "plugins"
   ],
   "exports": {
     ".": {
@@ -61,6 +62,18 @@
     "./compat/pi085": {
       "types": "./dist/compat/pi085/index.d.ts",
       "import": "./dist/compat/pi085/index.js"
+    },
+    "./hermes": {
+      "types": "./dist/hermes/index.d.ts",
+      "import": "./dist/hermes/index.js"
+    },
+    "./openclaw": {
+      "types": "./dist/openclaw/index.d.ts",
+      "import": "./dist/openclaw/index.js"
+    },
+    "./openclaw/plugin": {
+      "types": "./dist/openclaw/plugin.d.ts",
+      "import": "./dist/openclaw/plugin.js"
     }
   },
   "scripts": {
@@ -88,6 +101,7 @@
     "@types/cross-spawn": "6.0.6",
     "@types/node": "24.10.1",
     "opencode-ai": "1.18.35",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "ws": "8.22.0"
   }
 }

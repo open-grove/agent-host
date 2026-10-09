@@ -3,69 +3,9 @@ import test from "node:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
+import { model, fixture } from "./fixtures/pi-stream.mjs";
 import { PiAgent } from "../dist/pi/index.js";
 import { FileBindingStore } from "../dist/index.js";
-const model = {
-  id: "fixture",
-  name: "Fixture",
-  api: "openai-completions",
-  provider: "openai",
-  baseUrl: "https://example.test/v1",
-  reasoning: false,
-  input: ["text"],
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  contextWindow: 128000,
-  maxTokens: 4096,
-};
-function fixture(observed) {
-  return (_, context) => {
-    observed.push(context);
-    const tool = context.messages.at(-1)?.role === "toolResult";
-    const call =
-      !tool && JSON.stringify(context.messages.at(-1)).includes("call edit");
-    const message = {
-      role: "assistant",
-      content: call
-        ? [
-            {
-              type: "toolCall",
-              id: "edit-1",
-              name: "edit",
-              arguments: { text: "CEDAR" },
-            },
-          ]
-        : [
-            {
-              type: "text",
-              text: tool
-                ? JSON.stringify(context.messages.at(-1).content)
-                : "Native reply",
-            },
-          ],
-      api: model.api,
-      provider: model.provider,
-      model: model.id,
-      stopReason: call ? "toolUse" : "stop",
-      timestamp: Date.now(),
-      usage: {
-        input: 1,
-        output: 1,
-        cacheRead: 0,
-        cacheWrite: 0,
-        totalTokens: 2,
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-      },
-    };
-    const stream = createAssistantMessageEventStream();
-    queueMicrotask(() => {
-      stream.push({ type: "start", partial: message });
-      stream.push({ type: "done", reason: message.stopReason, message });
-      stream.end();
-    });
-    return stream;
-  };
-}
 const base = {
   sessionId: "document",
   input: "hello",

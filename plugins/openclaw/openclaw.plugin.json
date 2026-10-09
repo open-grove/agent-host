@@ -1,0 +1,21 @@
+{
+  "id": "agent-host",
+  "name": "Agent Host product tools",
+  "description": "Scoped local product tools supplied by an authenticated Agent Host consumer.",
+  "categories": [
+    "tools"
+  ],
+  "activation": {
+    "onStartup": true
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  },
+  "contracts": {
+    "tools": [
+      "agent_host_call"
+    ]
+  }
+}

@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { model, fixture as piStream } from "../test/fixtures/pi-stream.mjs";
+import { startOpenClawFixture } from "../test/fixtures/openclaw-gateway.mjs";
 import { createClaudeQueryFixture } from "../test/fixtures/claude-query.mjs";
 import { execFileSync } from "node:child_process";
 import { cp, mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
@@ -215,6 +217,120 @@ for (const kernel of ["opencode", "kimi"]) {
     await editor.close();
   }
 }
+
+// Hermes uses the same product, through its native Gateway/MCP contract fixture.
+{
+  const directory = join(consumer, "hermes-workspace");
+  const options = {
+    directory,
+    kernel: "hermes",
+    command: process.execPath,
+    args: [resolve("test/fixtures/hermes-gateway.mjs")],
+    env: { ...process.env, HERMES_HOME: join(directory, "native-home") },
+  };
+  let editor = await createEditor({ ...options, approve: async () => true });
+  try {
+    const approved = await Array.fromAsync(editor.run("CALL_TOOL"));
+    assert.equal(
+      approved.at(-1).outcome.status,
+      "completed",
+      JSON.stringify(approved.at(-1)),
+    );
+    assert.equal(await editor.read(), "Shared Hermes editor");
+    const threadId = approved.find((e) => e.type === "session.bound").threadId;
+    await editor.close();
+    editor = await createEditor({ ...options, approve: async () => false });
+    const rejected = await Array.fromAsync(editor.run("CALL_TOOL"));
+    assert.equal(
+      rejected.at(-1).outcome.status,
+      "completed",
+      JSON.stringify(rejected.at(-1)),
+    );
+    assert.equal(
+      rejected.find((e) => e.type === "session.bound").threadId,
+      threadId,
+    );
+    assert.equal(
+      rejected.find((e) => e.type === "tool.finished").result.success,
+      false,
+    );
+    assert.equal(await editor.read(), "Shared Hermes editor");
+    console.log(
+      "PASS installed Hermes editor: product MCP approve/reject and stored native ID restart (Gateway fixture)",
+    );
+  } finally {
+    await editor.close();
+  }
+}
+
+// The current Pi loop and persistence are native; only provider output is deterministic.
+for (const kernel of ["pi", "openclaw"]) {
+  const gateway =
+    kernel === "openclaw" ? await startOpenClawFixture() : undefined;
+  const observed = [];
+  const options = {
+    directory: join(consumer, `${kernel}-workspace`),
+    kernel,
+    adapterOptions: gateway ?? {
+      model,
+      streamFn: piStream(observed, "edit_document"),
+    },
+  };
+  let editor = await createEditor({ ...options, approve: async () => true });
+  try {
+    const first = await Array.fromAsync(
+      editor.run(kernel === "pi" ? "call edit" : "TOOL"),
+    );
+    assert.equal(
+      first.at(-1).outcome.status,
+      "completed",
+      JSON.stringify(first.at(-1)),
+    );
+    const expected = kernel === "pi" ? "CEDAR" : "Saved via OpenClaw";
+    assert.equal(await editor.read(), expected);
+    const thread = first.find((e) => e.type === "session.bound").threadId;
+    await editor.close();
+    editor = await createEditor({ ...options, approve: async () => false });
+    const denied = await Array.fromAsync(
+      editor.run(kernel === "pi" ? "call edit" : "TOOL"),
+    );
+    assert.equal(
+      denied.at(-1).outcome.status,
+      "completed",
+      JSON.stringify(denied.at(-1)),
+    );
+    assert.equal(
+      denied.find((e) => e.type === "session.bound").threadId,
+      thread,
+    );
+    assert.equal(
+      denied.find((e) => e.type === "tool.finished").result.success,
+      false,
+    );
+    assert.equal(await editor.read(), expected);
+    console.log(
+      `PASS installed ${kernel} editor: approve/reject and native binding restart (provider/protocol fixture)`,
+    );
+  } finally {
+    await editor.close();
+    await gateway?.close();
+  }
+}
+const installed = join(consumer, "node_modules/@open-grove/agent-host");
+assert.equal(
+  JSON.parse(
+    await readFile(
+      join(installed, "plugins/openclaw/openclaw.plugin.json"),
+      "utf8",
+    ),
+  ).contracts.tools[0],
+  "agent_host_call",
+);
+assert.equal(
+  (await import(pathToFileURL(join(installed, "plugins/openclaw/index.js"))))
+    .default.id,
+  "agent-host",
+);
 
 if (process.env.AGENT_HOST_NATIVE_PROBE === "1") {
   const command =

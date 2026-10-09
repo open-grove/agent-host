@@ -1,13 +1,31 @@
+import { readFile } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
 import { createEditor } from "./editor.mjs";
 
+const config = process.env.AGENT_HOST_OPTIONS_FILE
+  ? JSON.parse(await readFile(process.env.AGENT_HOST_OPTIONS_FILE, "utf8"))
+  : {};
 const ui = createInterface({ input: process.stdin, output: process.stdout });
 let active;
 const editor = await createEditor({
-  directory: process.argv[2] ?? ".local/editor",
-  kernel: process.env.AGENT_HOST_KERNEL ?? "codex",
-  command: process.env.AGENT_HOST_COMMAND ?? process.env.AGENT_HOST_CODEX,
-  model: process.env.AGENT_HOST_MODEL,
+  ...config,
+  directory: process.argv[2] ?? config.directory ?? ".local/editor",
+  kernel: process.env.AGENT_HOST_KERNEL ?? config.kernel ?? "codex",
+  command:
+    process.env.AGENT_HOST_COMMAND ??
+    process.env.AGENT_HOST_CODEX ??
+    config.command,
+  model: process.env.AGENT_HOST_MODEL ?? config.model,
+  env: { ...process.env, ...config.env },
+  adapterOptions: {
+    ...config.adapterOptions,
+    ...(process.env.AGENT_HOST_OPENCLAW_URL
+      ? {
+          url: process.env.AGENT_HOST_OPENCLAW_URL,
+          token: process.env.AGENT_HOST_OPENCLAW_TOKEN,
+        }
+      : {}),
+  },
   approve: async (request, signal) =>
     (
       await ui.question(`${JSON.stringify(request, null, 2)}\nAllow? [y/N] `, {
