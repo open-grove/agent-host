@@ -1,0 +1,47 @@
+{
+  "name": "@open-grove/agent-host",
+  "version": "0.1.0-alpha.1",
+  "description": "Product-independent native Agent sessions, tools and interaction routing",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-grove/agent-host.git"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "docs/api.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./codex": {
+      "types": "./dist/codex/index.d.ts",
+      "import": "./dist/codex/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepack": "npm run build",
+    "test:package": "node scripts/test-package.mjs",
+    "probe:codex": "node scripts/probe-codex.mjs"
+  },
+  "dependencies": {
+    "cross-spawn": "7.0.6"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "6.0.6",
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3",
+    "@openai/codex": "0.162.0"
+  }
+}
