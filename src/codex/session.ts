@@ -156,6 +156,7 @@ export class CodexAgent {
     let client: CodexAppServerClient | undefined;
     let terminal: (() => void) | undefined;
     let grace: ReturnType<typeof setTimeout> | undefined;
+    let compactTimeout: ReturnType<typeof setTimeout> | undefined;
     // Duplicate native requests may be delivered before the first tool result completes.
     const toolCalls = new Map<string, { signature: string; result: Promise<CodexDynamicToolCallResponse> }>();
     try {
@@ -176,7 +177,7 @@ export class CodexAgent {
       if (existing && existing.fingerprint !== fingerprint) throw new Error("session_scope_changed: choose a new sessionId");
       const params: JsonObject = {
         ...request.thread, cwd: resolve(request.cwd), developerInstructions: request.instructions,
-        ...(existing ? { threadId: existing.threadId } : { dynamicTools: specs as unknown as JsonValue }),
+        ...(existing ? { threadId: existing.threadId } : { dynamicTools: specs.map(spec => ({ ...spec, type: "function" })) as unknown as JsonValue }),
       };
       const started = await client.request<{ thread?: { id?: string } }>(existing ? "thread/resume" : "thread/start", params,
         { timeoutMs: this.options.requestTimeoutMs ?? 60_000 });
@@ -191,6 +192,13 @@ export class CodexAgent {
       const onNotification = (notification: { method: string; params?: JsonValue }) => {
         const p = object(notification.params);
         if (p?.threadId !== threadId) return;
+        if (!context.turnId && request.mode === "compact" && notification.method === "turn/started") {
+          const startedTurn = object(p.turn);
+          if (typeof startedTurn?.id === "string") {
+            context.turnId = startedTurn.id;
+            for (const previous of pending.splice(0)) onNotification(previous);
+          }
+        }
         if (!context.turnId) { pending.push(notification); return; }
         const turn = object(p.turn);
         const eventTurn = p.turnId ?? turn?.id;
@@ -270,12 +278,17 @@ export class CodexAgent {
         ? [{ type: "text", text: request.input, text_elements: [] }] : request.input;
       const turnInput = request.context ? [{ type: "text", text: request.context, text_elements: [] }, ...input] : input;
       nativeStarted = true;
+      if (request.mode === "compact") compactTimeout = setTimeout(() => {
+        outcome = { status: "failed", error: "compact_outcome_unknown", outcomeUnknown: true };
+        client!.close();
+        terminal?.();
+      }, this.options.requestTimeoutMs ?? 60_000);
       const response = await client.request<{ turn?: { id?: string } }>(request.mode === "compact" ? "thread/compact/start" : "turn/start",
         request.mode === "compact" ? { threadId } : { ...request.turn, threadId, input: turnInput as JsonValue },
         { timeoutMs: this.options.requestTimeoutMs ?? 60_000 });
-      context.turnId = response.turn?.id ?? "";
-      if (!context.turnId) throw new Error("native_turn_id_missing");
-      for (const notification of pending) onNotification(notification);
+      context.turnId = response.turn?.id ?? context.turnId;
+      if (!context.turnId && request.mode !== "compact") throw new Error("native_turn_id_missing");
+      if (context.turnId) for (const notification of pending.splice(0)) onNotification(notification);
       if (signal.aborted) interrupt();
       await done;
     } catch (error) {
@@ -284,6 +297,7 @@ export class CodexAgent {
       if (uncertain) client?.close();
     } finally {
       if (grace) clearTimeout(grace);
+      if (compactTimeout) clearTimeout(compactTimeout);
       for (const cleanup of cleanups) cleanup();
       controller.abort();
       if (activeRegistered) this.active.delete(request.sessionId);

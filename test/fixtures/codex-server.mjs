@@ -17,7 +17,10 @@ createInterface({ input: process.stdin }).on('line', async line => {
   const p = m.params ?? {};
   if (m.method === 'initialize') return reply(m.id, { userAgent: 'codex/0.162.0' });
   if (m.method === 'initialized') return;
-  if (m.method === 'thread/start') return reply(m.id, { thread: { id: `thread-${++id}` } });
+  if (m.method === 'thread/start') {
+    if (p.dynamicTools?.some(tool => tool.type !== 'function')) return send({ id: m.id, error: { code: -32602, message: 'missing field type in dynamicTools' } });
+    return reply(m.id, { thread: { id: `thread-${++id}` } });
+  }
   if (m.method === 'thread/resume') {
     if (p.threadId === 'missing') return send({ id: m.id, error: { code: -32000, message: 'session unavailable' } });
     return reply(m.id, { thread: { id: p.threadId } });
@@ -29,6 +32,12 @@ createInterface({ input: process.stdin }).on('line', async line => {
   const turnId = `turn-${++id}`;
   const input = p.input?.map(i => i.text ?? '').join('\n') ?? 'compact';
   active.set(threadId, turnId);
+  if (m.method === 'thread/compact/start') {
+    reply(m.id, {});
+    notify('turn/started', { threadId, turn: { id: turnId, status: 'inProgress' } });
+    notify('item/completed', { threadId, turnId, item: { id: 'compact', type: 'contextCompaction' } });
+    finish(threadId, turnId); return;
+  }
   if (input === 'lose-producer') { reply(m.id, { turn: { id: turnId } }); setTimeout(() => process.exit(3), 10); return; }
   if (input === 'never-acknowledge') return;
   if (input === 'wait') return reply(m.id, { turn: { id: turnId } });

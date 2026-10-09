@@ -24,6 +24,12 @@ test('streams only final text and handles completion before start acknowledgemen
   assert.deepEqual(events.filter(e => e.type === 'assistant.delta').map(e => e.text), ['hello']);
   assert.deepEqual(terminal(events), { status: 'completed' });
 });
+test('Codex 0.162 compaction observes the native turn instead of expecting an ID in its response', async t => {
+  const agent = await agentTest(t);
+  const events = await Array.fromAsync(agent.run({ ...base, mode: 'compact' }));
+  assert.equal(terminal(events).status, 'completed');
+  assert.ok(events.some(e => e.type === 'native.notification' && e.notification.params.item?.type === 'contextCompaction'));
+});
 test('native continuation across process restart receives fresh product context', async t => {
   const bindings = new MemoryBindingStore();
   const first = await agentTest(t, { bindings });
