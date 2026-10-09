@@ -91,4 +91,3 @@ Mock/protocol tests and native model-backed probes are recorded separately. Plat
 3. Migrate and update the remaining adapters one at a time, with separate extraction and upstream-compatibility changes where practical.
 4. Compare the Rivet backend under the same gates and retain native paths where required capabilities differ.
 5. Publish a versioned package only with installation instructions and an evidence-backed support matrix.
-

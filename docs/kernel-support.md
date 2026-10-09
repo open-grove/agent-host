@@ -25,4 +25,3 @@ Related integration components: ACP SDK **1.7.0** and Rivet Sandbox Agent **0.5.
 - **Kimi, Hermes and OpenClaw:** review the complete version interval for their actual ACP or Gateway integration surfaces; a patch release note alone is insufficient.
 
 This page tracks migration targets. Completed compatibility results must identify the package revision, native version, platform, relevant provider context and verification method without publishing credentials or private conversation data.
-

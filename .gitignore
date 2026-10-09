@@ -7,4 +7,3 @@ coverage/
 !.env.example
 .DS_Store
 .local/
-

@@ -40,4 +40,3 @@ The extraction will review and reuse relevant work from [OpenGrove](https://gith
 ## License
 
 [Apache-2.0](LICENSE). Preserve upstream attribution when extracting code.
-
