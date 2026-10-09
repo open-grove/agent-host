@@ -3,7 +3,10 @@ import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
-import { createInterface, type Interface as ReadlineInterface } from "node:readline";
+import {
+  createInterface,
+  type Interface as ReadlineInterface,
+} from "node:readline";
 import type { JsonValue } from "../types.js";
 import { resolveCommandInvocation } from "../environment/command.js";
 import type { RpcRecorder } from "../types.js";
@@ -28,7 +31,12 @@ export const CODEX_APP_SERVER_OPT_OUT_NOTIFICATION_METHODS: string[] = [
   "item/reasoning/textDelta",
 ];
 
-export type CodexRequestFailureKind = "aborted" | "timeout" | "remote" | "transport" | "closed";
+export type CodexRequestFailureKind =
+  | "aborted"
+  | "timeout"
+  | "remote"
+  | "transport"
+  | "closed";
 
 export class CodexRequestFailure extends Error {
   constructor(
@@ -75,15 +83,29 @@ export class CodexAppServerClient {
       this.rpcCapture?.recordStderr(chunk);
       this.stderrTail = `${this.stderrTail}${chunk}`.slice(-4096);
     });
-    child.once("error", (error) => this.closeWithError(error instanceof Error ? error : new Error(String(error))));
+    child.once("error", (error) =>
+      this.closeWithError(
+        error instanceof Error ? error : new Error(String(error)),
+      ),
+    );
     child.once("exit", (code, signal) => {
-      this.closeWithError(new Error(`codex app-server exited: code=${code ?? "null"} signal=${signal ?? "null"}`));
+      this.closeWithError(
+        new Error(
+          `codex app-server exited: code=${code ?? "null"} signal=${signal ?? "null"}`,
+        ),
+      );
     });
     child.once("close", (code, signal) => {
-      this.closeWithError(new Error(`codex app-server exited: code=${code ?? "null"} signal=${signal ?? "null"}`));
+      this.closeWithError(
+        new Error(
+          `codex app-server exited: code=${code ?? "null"} signal=${signal ?? "null"}`,
+        ),
+      );
     });
     child.stdin.on("error", (error) => {
-      this.closeWithError(error instanceof Error ? error : new Error(String(error)));
+      this.closeWithError(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       this.terminateChild("SIGTERM");
     });
   }
@@ -95,7 +117,9 @@ export class CodexAppServerClient {
     rpcCapture?: RpcRecorder;
     fallbackRequest?: ServerRequestHandler;
   }): Promise<CodexAppServerClient> {
-    const invocation = resolveCommandInvocation(options.command, options.args, { wrapWindowsScript: false });
+    const invocation = resolveCommandInvocation(options.command, options.args, {
+      wrapWindowsScript: false,
+    });
     await refreshWindowsPath({ ...process.env, ...options.env });
     const detached = process.platform !== "win32";
     const child = crossSpawn(invocation.command, invocation.args, {
@@ -103,13 +127,19 @@ export class CodexAppServerClient {
       stdio: ["pipe", "pipe", "pipe"],
       detached,
     });
-    if (!child.stdin || !child.stdout || !child.stderr) throw new Error("app-server stdio pipes unavailable");
+    if (!child.stdin || !child.stdout || !child.stderr)
+      throw new Error("app-server stdio pipes unavailable");
     options.rpcCapture?.recordLifecycle("app_server.spawned", {
       command: invocation.command,
       args: invocation.args,
       pid: child.pid,
     });
-    return new CodexAppServerClient(child as ChildProcessWithoutNullStreams, options.rpcCapture, detached ? child.pid : undefined, options.fallbackRequest);
+    return new CodexAppServerClient(
+      child as ChildProcessWithoutNullStreams,
+      options.rpcCapture,
+      detached ? child.pid : undefined,
+      options.fallbackRequest,
+    );
   }
 
   isClosed(): boolean {
@@ -123,27 +153,43 @@ export class CodexAppServerClient {
   close(): void {
     if (this.closed) return;
     this.closed = true;
-    this.rpcCapture?.recordLifecycle("app_server.closed", { reason: "closed_by_host" });
+    this.rpcCapture?.recordLifecycle("app_server.closed", {
+      reason: "closed_by_host",
+    });
     this.lines.close();
     this.terminateChild("SIGTERM");
     const killTimer = setTimeout(() => this.terminateChild("SIGKILL"), 1_500);
     killTimer.unref?.();
     for (const pending of this.pending.values()) {
       pending.cleanup();
-      pending.reject(new CodexRequestFailure("closed", pending.method, "codex app-server closed"));
+      pending.reject(
+        new CodexRequestFailure(
+          "closed",
+          pending.method,
+          "codex app-server closed",
+        ),
+      );
     }
     this.pending.clear();
     this.notifyCloseHandlers(new Error("codex app-server closed by host"));
   }
 
-  async initialize(clientInfo = { name: "agent_host", title: "Agent Host", version: "0.1.0" }): Promise<void> {
-    const response = await this.request<CodexInitializeResponse>("initialize", {
-      clientInfo,
-      capabilities: {
-        experimentalApi: true,
-        optOutNotificationMethods: CODEX_APP_SERVER_OPT_OUT_NOTIFICATION_METHODS,
+  async initialize(
+    clientInfo = { name: "agent_host", title: "Agent Host", version: "0.1.0" },
+    timeoutMs = 60_000,
+  ): Promise<void> {
+    const response = await this.request<CodexInitializeResponse>(
+      "initialize",
+      {
+        clientInfo,
+        capabilities: {
+          experimentalApi: true,
+          optOutNotificationMethods:
+            CODEX_APP_SERVER_OPT_OUT_NOTIFICATION_METHODS,
+        },
       },
-    });
+      { timeoutMs },
+    );
     assertSupportedCodexAppServerVersion(response);
     this.notify("initialized");
   }
@@ -154,10 +200,18 @@ export class CodexAppServerClient {
     options: { timeoutMs?: number; signal?: AbortSignal } = {},
   ): Promise<T> {
     if (this.closed) {
-      return Promise.reject(new CodexRequestFailure("closed", method, "codex app-server client is closed"));
+      return Promise.reject(
+        new CodexRequestFailure(
+          "closed",
+          method,
+          "codex app-server client is closed",
+        ),
+      );
     }
     if (options.signal?.aborted) {
-      return Promise.reject(new CodexRequestFailure("aborted", method, `${method} aborted`));
+      return Promise.reject(
+        new CodexRequestFailure("aborted", method, `${method} aborted`),
+      );
     }
     const id = this.nextId++;
     return new Promise<T>((resolve, reject) => {
@@ -179,17 +233,28 @@ export class CodexAppServerClient {
         cleanup();
         reject(error);
       };
-      if (options.timeoutMs && Number.isFinite(options.timeoutMs) && options.timeoutMs > 0) {
+      if (
+        options.timeoutMs &&
+        Number.isFinite(options.timeoutMs) &&
+        options.timeoutMs > 0
+      ) {
         timeout = setTimeout(
-          () => rejectPending(new CodexRequestFailure("timeout", method, `${method} timed out`)),
+          () =>
+            rejectPending(
+              new CodexRequestFailure("timeout", method, `${method} timed out`),
+            ),
           Math.max(100, options.timeoutMs),
         );
         timeout.unref?.();
       }
       if (options.signal) {
-        const abortListener = () => rejectPending(new CodexRequestFailure("aborted", method, `${method} aborted`));
+        const abortListener = () =>
+          rejectPending(
+            new CodexRequestFailure("aborted", method, `${method} aborted`),
+          );
         options.signal.addEventListener("abort", abortListener, { once: true });
-        cleanupAbort = () => options.signal?.removeEventListener("abort", abortListener);
+        cleanupAbort = () =>
+          options.signal?.removeEventListener("abort", abortListener);
       }
       this.pending.set(id, {
         method,
@@ -231,7 +296,10 @@ export class CodexAppServerClient {
       return;
     }
     this.rpcCapture?.recordMessage("host_to_codex", message, {
-      method: "method" in message ? message.method : this.serverRequestMethods.get(message.id),
+      method:
+        "method" in message
+          ? message.method
+          : this.serverRequestMethods.get(message.id),
     });
     this.child.stdin.write(`${JSON.stringify(message)}\n`);
   }
@@ -253,7 +321,9 @@ export class CodexAppServerClient {
     }
     const message = parsed as RpcMessage;
     this.rpcCapture?.recordMessage("codex_to_host", message, {
-      method: isRpcResponse(message) ? this.pending.get(message.id)?.method : undefined,
+      method: isRpcResponse(message)
+        ? this.pending.get(message.id)?.method
+        : undefined,
     });
     if (isRpcResponse(message)) {
       this.handleResponse(message);
@@ -284,7 +354,11 @@ export class CodexAppServerClient {
     this.pending.delete(response.id);
     if (response.error) {
       pending.reject(
-        new CodexRequestFailure("remote", pending.method, response.error.message || `${pending.method} failed`),
+        new CodexRequestFailure(
+          "remote",
+          pending.method,
+          response.error.message || `${pending.method} failed`,
+        ),
       );
       return;
     }
@@ -315,12 +389,17 @@ export class CodexAppServerClient {
     } catch (error) {
       respond({
         id: request.id,
-        error: { message: error instanceof Error ? error.message : String(error) },
+        error: {
+          message: error instanceof Error ? error.message : String(error),
+        },
       });
     }
   }
 
-  private handleNotification(notification: { method: string; params?: JsonValue }): void {
+  private handleNotification(notification: {
+    method: string;
+    params?: JsonValue;
+  }): void {
     for (const handler of this.notificationHandlers) {
       Promise.resolve(handler(notification)).catch(() => {
         // Notification consumers should not crash the shared app-server process.
@@ -333,11 +412,15 @@ export class CodexAppServerClient {
       return;
     }
     this.closed = true;
-    this.rpcCapture?.recordLifecycle("app_server.closed", { error: error.message });
+    this.rpcCapture?.recordLifecycle("app_server.closed", {
+      error: error.message,
+    });
     this.lines.close();
     for (const pending of this.pending.values()) {
       pending.cleanup();
-      pending.reject(new CodexRequestFailure("transport", pending.method, error.message));
+      pending.reject(
+        new CodexRequestFailure("transport", pending.method, error.message),
+      );
     }
     this.pending.clear();
     this.notifyCloseHandlers(error);
@@ -373,16 +456,27 @@ export function buildCodexAppServerEnv(
   return merged;
 }
 
-function augmentedCodexRuntimePath(command: string, pathValue: string | undefined, platform: NodeJS.Platform): string {
+function augmentedCodexRuntimePath(
+  command: string,
+  pathValue: string | undefined,
+  platform: NodeJS.Platform,
+): string {
   const pathDelimiter = platform === "win32" ? ";" : ":";
   const existing = (pathValue || "").split(pathDelimiter).filter(Boolean);
   const additions = defaultCodexRuntimePathAdditions(command, platform);
   return dedupePathEntries([...existing, ...additions]).join(pathDelimiter);
 }
 
-function defaultCodexRuntimePathAdditions(command: string, platform: NodeJS.Platform): string[] {
-  const commandDirectory = command.includes("/") || command.includes("\\") ? dirname(command) : "";
-  if (platform === "win32") return commandDirectory && safeDirectoryExists(commandDirectory) ? [commandDirectory] : [];
+function defaultCodexRuntimePathAdditions(
+  command: string,
+  platform: NodeJS.Platform,
+): string[] {
+  const commandDirectory =
+    command.includes("/") || command.includes("\\") ? dirname(command) : "";
+  if (platform === "win32")
+    return commandDirectory && safeDirectoryExists(commandDirectory)
+      ? [commandDirectory]
+      : [];
   const additions = [
     commandDirectory,
     "/opt/homebrew/bin",
@@ -416,24 +510,47 @@ function safeDirectoryExists(path: string): boolean {
   }
 }
 
-function defaultCodexServerRequestResponse(request: RpcRequest & { id: string | number }): RpcResponse {
+function defaultCodexServerRequestResponse(
+  request: RpcRequest & { id: string | number },
+): RpcResponse {
   const { id, method } = request;
-  if (method === "item/tool/call") return { id, result: {
-    contentItems: [{ type: "inputText", text: "No handler registered for this product tool." }], success: false,
-  } };
-  if (method === "item/commandExecution/requestApproval" || method === "item/fileChange/requestApproval")
+  if (method === "item/tool/call")
+    return {
+      id,
+      result: {
+        contentItems: [
+          {
+            type: "inputText",
+            text: "No handler registered for this product tool.",
+          },
+        ],
+        success: false,
+      },
+    };
+  if (
+    method === "item/commandExecution/requestApproval" ||
+    method === "item/fileChange/requestApproval"
+  )
     return { id, result: { decision: "cancel" } };
-  if (method === "item/permissions/requestApproval") return { id, result: { permissions: {}, scope: "turn" } };
-  if (method === "item/tool/requestUserInput") return { id, result: { answers: {} } };
-  if (method === "mcpServer/elicitation/request") return { id, result: { action: "decline" } };
-  return { id, error: { code: -32601, message: `Unsupported server request: ${method}` } };
+  if (method === "item/permissions/requestApproval")
+    return { id, result: { permissions: {}, scope: "turn" } };
+  if (method === "item/tool/requestUserInput")
+    return { id, result: { answers: {} } };
+  if (method === "mcpServer/elicitation/request")
+    return { id, result: { action: "decline" } };
+  return {
+    id,
+    error: { code: -32601, message: `Unsupported server request: ${method}` },
+  };
 }
 
 function isRpcResponse(message: RpcMessage): message is RpcResponse {
   return "id" in message && !("method" in message);
 }
 
-function assertSupportedCodexAppServerVersion(response: CodexInitializeResponse | undefined): void {
+function assertSupportedCodexAppServerVersion(
+  response: CodexInitializeResponse | undefined,
+): void {
   const detectedVersion = readCodexVersionFromUserAgent(response?.userAgent);
   if (!detectedVersion) {
     throw new Error(
@@ -447,15 +564,23 @@ function assertSupportedCodexAppServerVersion(response: CodexInitializeResponse 
   }
 }
 
-function readCodexVersionFromUserAgent(userAgent: string | undefined): string | undefined {
-  const match = userAgent?.match(/^[^/]+\/(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)(?:[\s(]|$)/);
+function readCodexVersionFromUserAgent(
+  userAgent: string | undefined,
+): string | undefined {
+  const match = userAgent?.match(
+    /^[^/]+\/(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)(?:[\s(]|$)/,
+  );
   return match?.[1];
 }
 
 function compareVersions(left: string, right: string): number {
   const leftParts = numericVersionParts(left);
   const rightParts = numericVersionParts(right);
-  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
+  for (
+    let index = 0;
+    index < Math.max(leftParts.length, rightParts.length);
+    index += 1
+  ) {
     const leftPart = leftParts[index] ?? 0;
     const rightPart = rightParts[index] ?? 0;
     if (leftPart !== rightPart) {

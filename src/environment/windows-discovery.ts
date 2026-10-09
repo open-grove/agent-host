@@ -24,7 +24,13 @@ $paths = @(
 ConvertTo-Json -InputObject $paths -Compress
 `;
 
-const REGISTRY_PATH_ARGS = ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", REGISTRY_PATH_QUERY];
+const REGISTRY_PATH_ARGS = [
+  "-NoLogo",
+  "-NoProfile",
+  "-NonInteractive",
+  "-Command",
+  REGISTRY_PATH_QUERY,
+];
 
 /** Ordinary reads use the last snapshot and never spawn PowerShell. */
 export function readWindowsPath(
@@ -42,32 +48,46 @@ export async function refreshWindowsPath(
   probe: WindowsEnvironmentProbe = {},
 ): Promise<NodeJS.ProcessEnv> {
   if ((probe.platform ?? process.platform) !== "win32") return environment;
-  const output = await refreshWindowsQuery(REGISTRY_PATH_ARGS, environment, probe);
+  const output = await refreshWindowsQuery(
+    REGISTRY_PATH_ARGS,
+    environment,
+    probe,
+  );
   return mergeWindowsPath(environment, output);
 }
 
-function mergeWindowsPath(environment: NodeJS.ProcessEnv, output: string | undefined): NodeJS.ProcessEnv {
+function mergeWindowsPath(
+  environment: NodeJS.ProcessEnv,
+  output: string | undefined,
+): NodeJS.ProcessEnv {
   const paths = [windowsEnvironmentValue(environment, "PATH") ?? ""];
   if (output?.trim()) {
     try {
       const values: unknown = JSON.parse(output.replace(/^\uFEFF/, ""));
-      if (!Array.isArray(values) || !values.every((value) => typeof value === "string"))
+      if (
+        !Array.isArray(values) ||
+        !values.every((value) => typeof value === "string")
+      )
         throw new Error("expected PATH strings");
       paths.push(
         ...values.map((value: string) =>
           value.replace(
             /%([^%]+)%/g,
-            (reference: string, name: string) => windowsEnvironmentValue(environment, name) ?? reference,
+            (reference: string, name: string) =>
+              windowsEnvironmentValue(environment, name) ?? reference,
           ),
         ),
       );
     } catch {
-      console.warn("[windows-discovery] Registry PATH query returned invalid JSON");
+      console.warn(
+        "[windows-discovery] Registry PATH query returned invalid JSON",
+      );
     }
   }
   // Node passes only one case-insensitive PATH key to Windows children.
   const merged = { ...environment };
-  for (const key of Object.keys(merged)) if (key.toLowerCase() === "path") delete merged[key];
+  for (const key of Object.keys(merged))
+    if (key.toLowerCase() === "path") delete merged[key];
   merged.PATH = windowsPathEntries(paths.join(";")).join(";");
   return merged;
 }

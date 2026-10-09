@@ -34,7 +34,10 @@ export type CodexDynamicToolCallParams = {
 };
 
 export type CodexDynamicToolCallResponse = {
-  contentItems: Array<{ type: "inputText"; text: string } | { type: "inputImage"; imageUrl: string }>;
+  contentItems: Array<
+    | { type: "inputText"; text: string }
+    | { type: "inputImage"; imageUrl: string }
+  >;
   success: boolean;
 };
 
@@ -71,7 +74,11 @@ export type CodexInitializeResponse = {
 
 export type CodexTurnInputItem =
   | { type: "text"; text: string; text_elements: [] }
-  | { type: "image"; url: string; detail?: "auto" | "low" | "high" | "original" }
+  | {
+      type: "image";
+      url: string;
+      detail?: "auto" | "low" | "high" | "original";
+    }
   | { type: "skill"; name: string; path: string }
   | { type: "mention"; name: string; path: string };
 
@@ -81,7 +88,9 @@ export type ServerRequestHandler = (request: {
   params?: JsonValue;
 }) => Promise<JsonValue | undefined> | JsonValue | undefined;
 
-export type ServerNotificationHandler = (notification: { method: string; params?: JsonValue }) => void | Promise<void>;
-
+export type ServerNotificationHandler = (notification: {
+  method: string;
+  params?: JsonValue;
+}) => void | Promise<void>;
 
 export const MIN_CODEX_APP_SERVER_VERSION = "0.125.0";

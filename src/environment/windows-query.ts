@@ -20,16 +20,27 @@ interface QuerySnapshot {
   pendingForced?: boolean;
 }
 
-const snapshots = new WeakMap<WindowsCommandQuery, Map<string, QuerySnapshot>>();
+const snapshots = new WeakMap<
+  WindowsCommandQuery,
+  Map<string, QuerySnapshot>
+>();
 
-export function windowsEnvironmentValue(environment: NodeJS.ProcessEnv, name: string): string | undefined {
+export function windowsEnvironmentValue(
+  environment: NodeJS.ProcessEnv,
+  name: string,
+): string | undefined {
   return (
-    environment[name] ?? Object.entries(environment).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
+    environment[name] ??
+    Object.entries(environment).find(
+      ([key]) => key.toLowerCase() === name.toLowerCase(),
+    )?.[1]
   );
 }
 
 /** Discovery helpers need Windows identity/system paths, never Provider credentials. */
-export function windowsProbeEnvironment(environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+export function windowsProbeEnvironment(
+  environment: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
   const result: NodeJS.ProcessEnv = {};
   for (const key of [
     "SystemRoot",
@@ -69,7 +80,13 @@ export function windowsProbeEnvironment(environment: NodeJS.ProcessEnv): NodeJS.
     result.PATH = join(systemRoot, "System32");
     // Preserve configured module lookup and analysis-cache paths: dropping
     // either can stall PowerShell 5.1 startup or Appx command discovery.
-    result.PSModulePath ??= join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "Modules");
+    result.PSModulePath ??= join(
+      systemRoot,
+      "System32",
+      "WindowsPowerShell",
+      "v1.0",
+      "Modules",
+    );
   }
   return result;
 }
@@ -112,13 +129,21 @@ export function refreshWindowsQuery(
   const snapshot = querySnapshot(args, environment, query);
   if (snapshot.pending) {
     return probe.force && !snapshot.pendingForced
-      ? snapshot.pending.then(() => refreshWindowsQuery(args, environment, probe, ttlMs))
+      ? snapshot.pending.then(() =>
+          refreshWindowsQuery(args, environment, probe, ttlMs),
+        )
       : snapshot.pending;
   }
-  if (!probe.force && snapshot.checkedAt !== undefined && Date.now() - snapshot.checkedAt < ttlMs)
+  if (
+    !probe.force &&
+    snapshot.checkedAt !== undefined &&
+    Date.now() - snapshot.checkedAt < ttlMs
+  )
     return Promise.resolve(snapshot.output);
   const refresh = Promise.resolve()
-    .then(() => query("powershell.exe", args, windowsProbeEnvironment(environment)))
+    .then(() =>
+      query("powershell.exe", args, windowsProbeEnvironment(environment)),
+    )
     .then((output) => {
       // A failed query must not erase a previously observed install. Successful
       // empty output still records absence, and failures are throttled too.
@@ -126,7 +151,9 @@ export function refreshWindowsQuery(
       return snapshot.output;
     })
     .catch((error: unknown) => {
-      console.warn(`[windows-discovery] query failed: ${error instanceof Error ? error.message : String(error)}`);
+      console.warn(
+        `[windows-discovery] query failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return snapshot.output;
     })
     .finally(() => {
@@ -139,16 +166,32 @@ export function refreshWindowsQuery(
 }
 
 /** Fixed system executable and bounded asynchronous query; never use a project PATH. */
-export const queryWindowsCommand: WindowsCommandQuery = (executable, args, environment) => {
+export const queryWindowsCommand: WindowsCommandQuery = (
+  executable,
+  args,
+  environment,
+) => {
   const safeEnvironment = windowsProbeEnvironment(environment);
   const systemRoot = safeEnvironment.SystemRoot || safeEnvironment.WINDIR;
   if (!systemRoot) return undefined;
-  const command = join(systemRoot, "System32", "WindowsPowerShell", "v1.0", executable);
+  const command = join(
+    systemRoot,
+    "System32",
+    "WindowsPowerShell",
+    "v1.0",
+    executable,
+  );
   return new Promise<string | undefined>((resolve) => {
     const child = execFile(
       command,
       [...args],
-      { env: safeEnvironment, encoding: "utf8", timeout: 5_000, maxBuffer: 256 * 1024, windowsHide: true },
+      {
+        env: safeEnvironment,
+        encoding: "utf8",
+        timeout: 5_000,
+        maxBuffer: 256 * 1024,
+        windowsHide: true,
+      },
       (error, stdout) => {
         if (error) {
           console.warn(
