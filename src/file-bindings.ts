@@ -1,5 +1,12 @@
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
+import {
+  mkdir,
+  readdir,
+  open,
+  readFile,
+  rename,
+  unlink,
+} from "node:fs/promises";
 import { join } from "node:path";
 import type { BindingStore, SessionBinding } from "./agent.js";
 
@@ -11,6 +18,31 @@ export class FileBindingStore implements BindingStore {
       this.directory,
       `${createHash("sha256").update(id).digest("hex")}.json`,
     );
+  }
+  async list(): Promise<Array<{ sessionId: string; binding: SessionBinding }>> {
+    let files: string[];
+    try {
+      files = await readdir(this.directory);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    }
+    const result: Array<{ sessionId: string; binding: SessionBinding }> = [];
+    for (const file of files.filter((file) => file.endsWith(".json"))) {
+      const entry: unknown = JSON.parse(
+        await readFile(join(this.directory, file), "utf8"),
+      );
+      if (
+        !entry ||
+        typeof entry !== "object" ||
+        !("sessionId" in entry) ||
+        typeof entry.sessionId !== "string"
+      )
+        continue;
+      const binding = await this.get(entry.sessionId);
+      if (binding) result.push({ sessionId: entry.sessionId, binding });
+    }
+    return result;
   }
   async delete(id: string): Promise<void> {
     await unlink(this.path(id)).catch((error) => {
@@ -47,7 +79,7 @@ export class FileBindingStore implements BindingStore {
     const temp = `${path}.${randomUUID()}.tmp`;
     const file = await open(temp, "wx", 0o600);
     try {
-      await file.writeFile(JSON.stringify(binding));
+      await file.writeFile(JSON.stringify({ ...binding, sessionId: id }));
       await file.sync();
     } finally {
       await file.close();

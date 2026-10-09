@@ -5,8 +5,8 @@ import {
   type AgentHarnessOptions,
   type AgentLane,
   type CompactionSettings,
-} from "@earendil-works/pi-agent-core";
-import type { ImageContent } from "@earendil-works/pi-ai";
+} from "pi-agent-core-legacy";
+import type { ImageContent } from "pi-ai-legacy";
 
 /** Recover unfinished native operations through Pi before admitting new input. */
 export async function openPiHarness<T extends object | undefined>(

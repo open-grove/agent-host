@@ -8,8 +8,8 @@ import { resolve, join } from "node:path";
 import { AcpAgent } from "../dist/acp/index.js";
 
 const kernel = process.argv[2];
-if (!["opencode", "kimi", "claude"].includes(kernel))
-  throw new Error("Usage: node scripts/probe-acp.mjs opencode|kimi|claude");
+if (!["opencode", "kimi", "claude", "pi"].includes(kernel))
+  throw new Error("Usage: node scripts/probe-acp.mjs opencode|kimi|claude|pi");
 const consumer = await mkdtemp(join(tmpdir(), "agent-host-native-editor-"));
 execFileSync("npm", ["pack", "--pack-destination", consumer, "--silent"], {
   stdio: "pipe",
@@ -38,7 +38,7 @@ const command =
   (kernel === "claude" ? undefined : resolve(`node_modules/.bin/${kernel}`));
 const directory = resolve(`.local/${kernel}-probe-${Date.now()}`);
 await mkdir(directory, { recursive: true });
-if (kernel !== "claude") {
+if (!["claude", "pi"].includes(kernel)) {
   const preflight = new AcpAgent({
     command,
     cwd: directory,
@@ -59,8 +59,34 @@ if (kernel !== "claude") {
 let allow = false;
 let calls = 0;
 let questions = 0;
+const piOptions =
+  kernel === "pi"
+    ? {
+        model: {
+          id: process.env.AGENT_HOST_PI_MODEL ?? "DeepSeek-V4-Pro",
+          name: "Native provider probe",
+          provider: process.env.AGENT_HOST_PI_PROVIDER ?? "openai",
+          api: process.env.AGENT_HOST_PI_API ?? "openai-completions",
+          baseUrl:
+            process.env.AGENT_HOST_PI_BASE_URL ??
+            "https://ark.cn-beijing.volces.com/api/coding/v3",
+          reasoning: false,
+          input: ["text"],
+          contextWindow: 128000,
+          maxTokens: 4096,
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        },
+      }
+    : {};
 const options = {
   directory,
+  adapterOptions:
+    kernel === "pi"
+      ? piOptions
+      : kernel === "claude" &&
+          process.env.AGENT_HOST_CLAUDE_LOCAL_PROVIDER === "1"
+        ? { native: { settingSources: ["local"] } }
+        : {},
   kernel,
   command,
   ask: async (items) => {
@@ -148,7 +174,7 @@ try {
     );
   }
   console.log(
-    `PASS ${kernel}: native MCP product tool, rejected/approved edits, native restart continuation`,
+    `PASS ${kernel}: native product tool, rejected/approved edits, native restart continuation`,
   );
 } finally {
   await editor.close();

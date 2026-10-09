@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { PiAgent } from "@open-grove/agent-host/pi";
 import { ClaudeAgent } from "@open-grove/agent-host/claude";
 import { AcpAgent } from "@open-grove/agent-host/acp";
 import { CodexAgent } from "@open-grove/agent-host/codex";
@@ -30,13 +31,18 @@ export async function createEditor({
   const Agent =
     kernel === "codex"
       ? CodexAgent
-      : kernel === "claude"
-        ? ClaudeAgent
-        : ["opencode", "kimi", "acp"].includes(kernel)
-          ? AcpAgent
-          : undefined;
+      : kernel === "pi"
+        ? PiAgent
+        : kernel === "claude"
+          ? ClaudeAgent
+          : ["opencode", "kimi", "acp"].includes(kernel)
+            ? AcpAgent
+            : undefined;
   if (!Agent) throw new Error(`Unsupported kernel: ${kernel}`);
   const agent = new Agent({
+    ...(kernel === "pi"
+      ? { cwd, sessionRoot: join(cwd, ".agent-host", "pi-native") }
+      : {}),
     ...adapterOptions,
     command: command ?? (kernel === "claude" ? undefined : kernel),
     args,

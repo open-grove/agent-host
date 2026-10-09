@@ -12,12 +12,19 @@ export interface SessionBinding {
 }
 /** One writer per product session. A store failure prevents starting the turn. */
 export interface BindingStore {
+  list?(): Promise<Array<{ sessionId: string; binding: SessionBinding }>>;
   delete?(sessionId: string): Promise<void>;
   get(sessionId: string): Promise<SessionBinding | undefined>;
   set(sessionId: string, binding: SessionBinding): Promise<void>;
 }
 export class MemoryBindingStore implements BindingStore {
   private readonly bindings = new Map<string, SessionBinding>();
+  async list() {
+    return [...this.bindings].map(([sessionId, binding]) => ({
+      sessionId,
+      binding,
+    }));
+  }
   async delete(id: string) {
     this.bindings.delete(id);
   }

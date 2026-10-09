@@ -1,10 +1,10 @@
-import type { StreamFn } from "@earendil-works/pi-agent-core";
+import type { StreamFn } from "pi-agent-core-legacy";
 import {
   createAssistantMessageEventStream,
   type Models,
   type Context as NativeModelContext,
   type AssistantMessage,
-} from "@earendil-works/pi-ai";
+} from "pi-ai-legacy";
 export function bridgePiStream(
   streamFn: StreamFn,
   model: Parameters<Models["streamSimple"]>[0],

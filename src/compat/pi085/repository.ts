@@ -4,8 +4,8 @@ import {
   MemorySessionRepo,
   type ExecutionEnv,
   type Session,
-} from "@earendil-works/pi-agent-core";
-import { NodeExecutionEnv } from "@earendil-works/pi-agent-core/node";
+} from "pi-agent-core-legacy";
+import { NodeExecutionEnv } from "pi-agent-core-legacy/node";
 export interface PiSessionInfo {
   sessionId: string;
   nativeSessionId: string;
