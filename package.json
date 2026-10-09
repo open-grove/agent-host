@@ -16,7 +16,9 @@
     "LICENSE",
     "NOTICE",
     "README.md",
-    "docs/api.md"
+    "README.zh-CN.md",
+    "docs",
+    "examples/file-editor"
   ],
   "exports": {
     ".": {
