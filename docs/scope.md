@@ -27,15 +27,17 @@ Private credentials stay at the runtime/Host boundary. Products may supply crede
 
 ## Ownership
 
-| Concern | Owner |
-| --- | --- |
-| Model loop, native transcript, native tools, native compaction | Kernel |
-| Transport, session binding, event translation, interaction routing | Agent Host adapter |
-| Business tools, application authorization, UI and domain data | Consuming product |
-| Durable product event storage and session-binding storage | Product-selected storage implementation |
-| Process or sandbox provisioning | Selected environment/backend implementation |
+| Concern                                                            | Owner                                                                                                                   |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Model loop, native transcript, native tools, native compaction     | Kernel                                                                                                                  |
+| Transport, session binding, event translation, interaction routing | Agent Host adapter                                                                                                      |
+| Business tools, application authorization, UI and domain data      | Consuming product                                                                                                       |
+| Durable product event storage and session-binding storage          | Product-selected storage implementation; the optional HTTP service supplies its own SQLite task store and file bindings |
+| Process or sandbox provisioning                                    | Selected environment/backend implementation                                                                             |
 
 Room, Employee, App Store, long-term memory strategy, billing, multi-tenant scheduling and cross-Agent collaboration are outside this extraction. This does not exclude their use by a consuming product.
+
+The same adapters support [an optional HTTP service](http-service.md) and direct embedded use. The service manages task submission, result/event storage and callback transport. It does not change native execution semantics or take ownership of product business data.
 
 ## Kernel upgrades
 

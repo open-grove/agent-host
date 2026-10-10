@@ -4,9 +4,11 @@
 
 Agent Host is an open-source project to extract OpenGrove's native Agent integration into a product-independent package. A product supplies its context, tools and interaction handlers; Agent Host connects to the selected Agent and reports its work.
 
-**Status: all seven native integrations and the independent file editor are implemented on the extraction branch.** OpenGrove consumes the same alpha archive. The package is public source and installs from a built archive; it is not yet published to npm. `agent-host` is the working project name.
+**Status: all seven native integrations support embedded use and an optional standalone HTTP service.** OpenGrove and independent editor examples consume the alpha archive. The package is public source and installs from a built archive; it is not yet published to npm. `agent-host` is the working project name.
 
 The adapters provide native sessions, streaming, scoped product tools, approval/question callbacks, cancellation, steering and compaction. It has no OpenGrove runtime dependency. See [installation, API and verification limits](docs/api.md).
+
+Use the adapters directly in your product, or run `agent-host serve --config host.json` and connect through `@open-grove/agent-host/client`. Both modes use the same native adapters. The [standalone service guide](docs/http-service.md) covers task persistence, product callbacks, native interactions and restart behavior. Try the [browser editor](examples/http-editor/README.md) as an independent HTTP consumer.
 
 ## Responsibilities
 
@@ -37,7 +39,7 @@ Tracked work: [extraction and two consumers](https://github.com/open-grove/agent
 
 ## Existing work
 
-The extraction reviews and reuses relevant work from [OpenGrove](https://github.com/open-grove/opengrove), especially the [external-product integration proposal](https://github.com/open-grove/opengrove/pull/126) and [native context lifecycle work](https://github.com/open-grove/opengrove/pull/123). These are dependencies to review, not claims that either proposal is merged or that its reported tests have been rerun here.
+The HTTP service and browser client adapt the task, product-tool and example integration from [OpenGrove #126](https://github.com/open-grove/opengrove/pull/126), replacing its OpenGrove runtime/storage dependencies. This does not imply the original PR or [context lifecycle work #123](https://github.com/open-grove/opengrove/pull/123) has merged. [Issue #5](https://github.com/open-grove/agent-host/issues/5) tracks the service port and its acceptance tests.
 
 ## License
 

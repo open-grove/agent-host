@@ -11,11 +11,13 @@ npm ci
 npm test
 npm pack
 cd examples/file-editor
-npm install ../../open-grove-agent-host-0.1.0-alpha.1.tgz
+npm install ../../open-grove-agent-host-0.1.0-alpha.2.tgz
 AGENT_HOST_CODEX=../../node_modules/.bin/codex npm start
 ```
 
 Codex must already be authenticated. `AGENT_HOST_CODEX` selects an executable; it does not install or replace a global CLI. The editor owns one example `document.txt`, asks before editing it, supports Ctrl-C cancellation and saves native bindings for restart. This alpha is installed from its archive; it has not been published to the npm registry.
+
+For an independently running HTTP process and a browser client, see [Standalone HTTP service](http-service.md). Both entry points use the same native adapters.
 
 ## Product integration
 
