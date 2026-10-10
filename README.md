@@ -4,9 +4,11 @@
 
 Agent Host is an open-source project to extract OpenGrove's native Agent integration into a product-independent package. A product supplies its context, tools and interaction handlers; Agent Host connects to the selected Agent and reports its work.
 
-**Status: scope defined; extraction and Kernel upgrades have not shipped. There is no released runtime package yet.** `agent-host` is the working project name.
+**Status: all seven native integrations and the independent file editor are implemented on the extraction branch.** OpenGrove consumes the same alpha archive. The package is public source and installs from a built archive; it is not yet published to npm. `agent-host` is the working project name.
 
-## Intended responsibilities
+The adapters provide native sessions, streaming, scoped product tools, approval/question callbacks, cancellation, steering and compaction. It has no OpenGrove runtime dependency. See [installation, API and verification limits](docs/api.md).
+
+## Responsibilities
 
 - Connect to native Agents and manage their execution lifecycle.
 - Create and continue sessions, stream progress, cancel work and report recovery outcomes.
@@ -27,7 +29,7 @@ Both consumers must use the same package API. The editor is a reference integrat
 
 All seven existing Kernel integrations are in scope: Codex, Claude Agent, Pi, OpenCode, Kimi Code, Hermes and OpenClaw. Updates target stable upstream releases, with exact tested versions recorded. New upstream capabilities are reviewed against the public integration surface and exposed only with implementation and verification evidence.
 
-Rivet Sandbox Agent is evaluated as a replaceable execution backend. Its recovery and interaction semantics must pass the same consumer tests before replacing an existing native path.
+Rivet Sandbox Agent was evaluated as a replaceable backend. Its default stale-connection recovery recreates a native conversation and replays history, so the native paths remain. See the [decision and reproducible SDK evaluation](docs/rivet.md).
 
 See [scope and acceptance](docs/scope.md) and [Kernel upgrade targets](docs/kernel-support.md).
 
@@ -35,7 +37,7 @@ Tracked work: [extraction and two consumers](https://github.com/open-grove/agent
 
 ## Existing work
 
-The extraction will review and reuse relevant work from [OpenGrove](https://github.com/open-grove/opengrove), especially the [external-product integration proposal](https://github.com/open-grove/opengrove/pull/126) and [native context lifecycle work](https://github.com/open-grove/opengrove/pull/123). These are dependencies to review, not claims that either proposal is merged or that its reported tests have been rerun here.
+The extraction reviews and reuses relevant work from [OpenGrove](https://github.com/open-grove/opengrove), especially the [external-product integration proposal](https://github.com/open-grove/opengrove/pull/126) and [native context lifecycle work](https://github.com/open-grove/opengrove/pull/123). These are dependencies to review, not claims that either proposal is merged or that its reported tests have been rerun here.
 
 ## License
 

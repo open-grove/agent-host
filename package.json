@@ -1,0 +1,107 @@
+{
+  "name": "@open-grove/agent-host",
+  "version": "0.1.0-alpha.1",
+  "description": "Product-independent native Agent sessions, tools and interaction routing",
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-grove/agent-host.git"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "README.zh-CN.md",
+    "docs",
+    "examples/file-editor",
+    "plugins"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./codex": {
+      "types": "./dist/codex/index.d.ts",
+      "import": "./dist/codex/index.js"
+    },
+    "./environment/windows-discovery": {
+      "types": "./dist/environment/windows-discovery.d.ts",
+      "import": "./dist/environment/windows-discovery.js"
+    },
+    "./environment/windows-query": {
+      "types": "./dist/environment/windows-query.d.ts",
+      "import": "./dist/environment/windows-query.js"
+    },
+    "./transport": {
+      "types": "./dist/transport/stdio-json-rpc-client.d.ts",
+      "import": "./dist/transport/stdio-json-rpc-client.js"
+    },
+    "./acp": {
+      "types": "./dist/acp/index.d.ts",
+      "import": "./dist/acp/index.js"
+    },
+    "./acp/mcp-server": "./dist/acp/mcp-server.js",
+    "./claude": {
+      "types": "./dist/claude/index.d.ts",
+      "import": "./dist/claude/index.js"
+    },
+    "./native-session-lock": {
+      "types": "./dist/native-session-lock.d.ts",
+      "import": "./dist/native-session-lock.js"
+    },
+    "./pi": {
+      "types": "./dist/pi/index.d.ts",
+      "import": "./dist/pi/index.js"
+    },
+    "./compat/pi085": {
+      "types": "./dist/compat/pi085/index.d.ts",
+      "import": "./dist/compat/pi085/index.js"
+    },
+    "./hermes": {
+      "types": "./dist/hermes/index.d.ts",
+      "import": "./dist/hermes/index.js"
+    },
+    "./openclaw": {
+      "types": "./dist/openclaw/index.d.ts",
+      "import": "./dist/openclaw/index.js"
+    },
+    "./openclaw/plugin": {
+      "types": "./dist/openclaw/plugin.d.ts",
+      "import": "./dist/openclaw/plugin.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepack": "npm run build",
+    "test:package": "node scripts/test-package.mjs",
+    "probe:codex": "node scripts/probe-codex.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.295",
+    "@earendil-works/chord": "1.1.0",
+    "@earendil-works/pi-agent-core": "1.1.0",
+    "@earendil-works/pi-ai": "1.1.0",
+    "@earendil-works/pi-durable": "1.1.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "cross-spawn": "7.0.6",
+    "pi-agent-core-legacy": "npm:@earendil-works/pi-agent-core@0.85.1",
+    "pi-ai-legacy": "npm:@earendil-works/pi-ai@0.85.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@moonshot-ai/kimi-code": "2.1.1",
+    "@openai/codex": "0.162.0",
+    "@types/cross-spawn": "6.0.6",
+    "@types/node": "24.10.1",
+    "opencode-ai": "1.18.35",
+    "typescript": "5.9.3",
+    "ws": "8.22.0"
+  }
+}

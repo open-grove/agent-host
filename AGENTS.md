@@ -12,3 +12,5 @@ Read `README.md`, `docs/scope.md` and `docs/kernel-support.md` before changing p
 - Separate extraction regressions from upstream upgrade regressions in commits and validation.
 - Do not commit credentials, private conversations, machine-local state or raw diagnostic recordings.
 - For documentation-only changes, check local links and `git diff --check`. Runtime validation commands must be documented when executable packages are introduced.
+
+Runtime changes: run `npm test` and `npm run test:package`. Native probes are opt-in and must stay distinct from protocol fixture tests.
