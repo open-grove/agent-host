@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { testHttpPackage } from "./test-http-package.mjs";
 import { model, fixture as piStream } from "../test/fixtures/pi-stream.mjs";
 import { startOpenClawFixture } from "../test/fixtures/openclaw-gateway.mjs";
 import { createClaudeQueryFixture } from "../test/fixtures/claude-query.mjs";
@@ -26,7 +27,7 @@ execFileSync(
     "--ignore-scripts",
     "--no-audit",
     "--no-fund",
-    "./open-grove-agent-host-0.1.0-alpha.1.tgz",
+    "./open-grove-agent-host-0.1.0-alpha.2.tgz",
   ],
   { cwd: consumer, stdio: "pipe" },
 );
@@ -92,6 +93,18 @@ try {
     join(consumer, "consumer.ts"),
     `import { AcpAgent } from '@open-grove/agent-host/acp';\nimport { ClaudeAgent, ClaudeQueryHost } from '@open-grove/agent-host/claude';\nimport { PiAgent } from '@open-grove/agent-host/pi';\nimport { HermesAgent } from '@open-grove/agent-host/hermes';\nimport { OpenClawAgent } from '@open-grove/agent-host/openclaw';\nconst adapters = [AcpAgent, ClaudeAgent, ClaudeQueryHost, PiAgent, HermesAgent, OpenClawAgent];\nimport { CodexAgent } from '@open-grove/agent-host/codex';\nimport { FileBindingStore } from '@open-grove/agent-host';\nconst agent = new CodexAgent({ bindings: new FileBindingStore('state') });\nfor await (const e of agent.run({ sessionId: 's', cwd: '.', input: 'hi', instructions: '' })) console.log(e.type);\nawait agent.close();\n`,
   );
+  await writeFile(
+    join(consumer, "http-consumer.ts"),
+    `import { createNativeRuntime, startAgentHostServer } from '@open-grove/agent-host/server';
+import { AgentHostClient } from '@open-grove/agent-host/client';
+const runtime = createNativeRuntime({ id: 'codex', kernel: 'codex', cwd: '.' }, 'state');
+const server = await startAgentHostServer({ runtimes: [runtime], stateDirectory: 'state', token: 'example-owner-token' });
+const client = await new AgentHostClient({ baseUrl: server.url, token: 'example-owner-token' }).connect();
+const task = await client.session({ sessionId: 's', runtimeId: 'codex', tools: [{ name: 'edit', description: 'Edit', inputSchema: {}, async execute(input, context) { context.signal.throwIfAborted(); return { success: true, contentItems: [{ type: 'inputText', text: JSON.stringify(input) }] }; } }] }).run('hi');
+await task.wait({ onRequest: async () => ({ decision: 'decline' }) });
+await server.close();
+`,
+  );
   execFileSync(
     process.execPath,
     [
@@ -106,6 +119,7 @@ try {
       "--typeRoots",
       join(root, "node_modules/@types"),
       "consumer.ts",
+      "http-consumer.ts",
     ],
     { cwd: consumer, stdio: "pipe" },
   );
@@ -317,6 +331,13 @@ for (const kernel of ["pi", "openclaw"]) {
   }
 }
 const installed = join(consumer, "node_modules/@open-grove/agent-host");
+await testHttpPackage(consumer);
+await writeFile(
+  resolve(".local/last-package-consumer.json"),
+  JSON.stringify({ consumer }),
+);
+if (process.env.AGENT_HOST_HTTP_NATIVE === "1")
+  await testHttpPackage(consumer, { native: true });
 assert.equal(
   JSON.parse(
     await readFile(

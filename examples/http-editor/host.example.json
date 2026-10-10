@@ -1,0 +1,11 @@
+{
+  "stateDirectory": ".local/host",
+  "runtimes": [
+    {
+      "id": "codex",
+      "kernel": "codex",
+      "cwd": "editor-project",
+      "thread": { "sandbox": "read-only", "approvalPolicy": "on-request" }
+    }
+  ]
+}

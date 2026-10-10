@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Host 文档编辑器</title>
+    <style>
+      body {
+        font: 16px/1.6 system-ui;
+        margin: 40px auto;
+        max-width: 1000px;
+        padding: 0 24px;
+        color: #182622;
+        background: #f5f6f2;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      section {
+        background: white;
+        border: 1px solid #d9e0d8;
+        border-radius: 12px;
+        padding: 20px;
+      }
+      pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        min-height: 200px;
+      }
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 100px;
+        padding: 12px;
+        font: inherit;
+      }
+      button,
+      select {
+        font: inherit;
+        padding: 7px 12px;
+        margin: 8px 6px 0 0;
+      }
+      button {
+        cursor: pointer;
+      }
+      #status {
+        color: #426657;
+      }
+      dialog {
+        max-width: 650px;
+        border: 1px solid #b8c9c0;
+        border-radius: 12px;
+      }
+      dialog pre {
+        max-height: 45vh;
+        overflow: auto;
+        min-height: 0;
+      }
+      small {
+        color: #52625c;
+      }
+      @media (max-width: 700px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>文档编辑器</h1>
+      <span>由独立 Agent Host 提供助手</span>
+    </header>
+    <p id="status">正在连接…</p>
+    <main>
+      <section>
+        <h2>当前文档</h2>
+        <pre id="document"></pre>
+        <small>只有你确认后，助手提出的修改才会保存。</small>
+      </section>
+      <section>
+        <h2>编辑助手</h2>
+        <label
+          >使用
+          <select id="runtime"></select
+        ></label>
+        <pre id="answer">告诉助手你想怎么修改。</pre>
+        <textarea
+          id="input"
+          placeholder="例如：把文档改成一封简短的欢迎信。"
+        ></textarea>
+        <div>
+          <button id="send">发送</button><button id="observe">暂停查看</button
+          ><button id="cancel">取消任务</button>
+        </div>
+      </section>
+    </main>
+    <dialog id="confirmation">
+      <h2 id="confirmation-title"></h2>
+      <pre id="confirmation-text"></pre>
+      <input id="confirmation-input" hidden />
+      <div>
+        <button id="approve">允许</button><button id="reject">拒绝</button>
+      </div>
+    </dialog>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

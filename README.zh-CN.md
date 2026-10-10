@@ -4,9 +4,18 @@
 
 把 OpenGrove 已有的 Agent 接入能力拆成独立开源项目。产品提供自己的上下文、工具和用户交互，接入层负责连接 Agent、驱动工作并返回过程和结果。
 
-**当前状态：七个内核的共享接入和独立文件编辑器均已实现在拆分分支上。** OpenGrove 使用同一个 alpha 安装包。源码公开，可从构建包安装，还未发布到 npm。`agent-host` 是项目工作名。
+**当前状态：七个内核支持嵌入式接入，也可通过独立 HTTP 后台调用。** OpenGrove 和独立编辑器使用 alpha 安装包。源码公开，可从构建包安装，还未发布到 npm。`agent-host` 是项目工作名。
 
 安装、接口和验证范围见 [使用说明](docs/api.md)。已抽出的能力包括原生会话、流式事件、产品工具、审批与提问回调、取消、运行中补充指令和压缩会话；包本身不依赖 OpenGrove。
+
+## 两种使用方式
+
+- **嵌入式**：产品安装代码包，在自己的后台直接调用 Agent，由产品管理启动、停止和存储。
+- **独立后台**：运行 `agent-host serve --config host.json`，产品通过 HTTP 连接。后台负责保存任务和结果，转交产品操作、审批和提问。
+
+两种方式使用同一套内核适配。独立后台不需要安装 OpenGrove。详见 [HTTP 后台接入说明](docs/http-service.md)和[浏览器编辑器示例](examples/http-editor/README.md)。
+
+页面断开后可以重新接上仍在运行的任务。后台重启后，已完成结果仍可查询，原生会话可按内核能力继续；未完成任务明确标记为中断，不会自动重做产品操作。
 
 ## 拆什么
 
@@ -37,7 +46,7 @@ Rivet Sandbox Agent 已完成恢复语义评估：默认在连接失效后新建
 
 ## 复用已有工作
 
-迁移前检查 OpenGrove 的 [外部产品接入 PR #126](https://github.com/open-grove/opengrove/pull/126) 和 [原生上下文生命周期 PR #123](https://github.com/open-grove/opengrove/pull/123)。这些工作尚不能被视为本项目已合并或已重新验证的实现。
+独立后台和浏览器客户端移植了 [OpenGrove PR #126](https://github.com/open-grove/opengrove/pull/126) 的任务、产品工具和示例接入逻辑，并替换其 OpenGrove 运行与存储依赖。迁移及验收由 [Issue #5](https://github.com/open-grove/agent-host/issues/5) 跟踪。原 PR 和[上下文生命周期 PR #123](https://github.com/open-grove/opengrove/pull/123) 的其他内容不因此视为已合并。
 
 ## 许可证
 

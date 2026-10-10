@@ -20,6 +20,8 @@ The independent editor's **native model-backed probes passed for all seven Kerne
 
 Native Codex compaction and Kimi structured elicitation have additional live probe coverage. Other optional controls and interaction forms have contract coverage or retained upstream ports; they are **not all certified by model-backed probes**. OpenClaw's native shell approvals and native question routing are not exposed as common callbacks. Its product-tool approval path is verified separately through the bundled plugin.
 
+The standalone HTTP service adds a separate consumer path. Its seven-adapter matrix uses deterministic fixtures. A model-backed Codex 0.162.0 probe on macOS also passed through the installed HTTP CLI and independent editor: reject, approve/save, durable operation receipt, process restart and native conversation continuation. This does not certify all seven HTTP profiles or every control against live models. See [HTTP service verification](http-service.md#example-and-verification).
+
 ## Upgrade boundaries
 
 - **Pi 1.1 is a storage/API generation change.** New conversations use `pi-durable`. Existing OpenGrove 0.85 JSONL conversations keep the explicit `compat/pi085` adapter and pinned old native engine. There is no invented transcript importer. Remove this compatibility path only after an upstream-supported migration or deliberate retirement of those conversations. Pi 1.1 has no supported native delete API; deletion fails explicitly instead of deleting only a Host binding and pretending the conversation was deleted.

@@ -1,6 +1,6 @@
 {
   "name": "@open-grove/agent-host",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Product-independent native Agent sessions, tools and interaction routing",
   "type": "module",
   "license": "Apache-2.0",
@@ -19,9 +19,18 @@
     "README.zh-CN.md",
     "docs",
     "examples/file-editor",
+    "examples/http-editor",
     "plugins"
   ],
   "exports": {
+    "./server": {
+      "types": "./dist/service/index.d.ts",
+      "import": "./dist/service/index.js"
+    },
+    "./client": {
+      "types": "./dist/service/client.d.ts",
+      "import": "./dist/service/client.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
@@ -75,6 +84,9 @@
       "types": "./dist/openclaw/plugin.d.ts",
       "import": "./dist/openclaw/plugin.js"
     }
+  },
+  "bin": {
+    "agent-host": "dist/service/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
