@@ -6,6 +6,6 @@
     "start": "node cli.mjs"
   },
   "dependencies": {
-    "@open-grove/agent-host": "0.1.0-alpha.2"
+    "@open-grove/agent-host": "0.1.0-alpha.3"
   }
 }

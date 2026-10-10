@@ -11,7 +11,7 @@ npm ci
 npm test
 npm pack
 cd examples/file-editor
-npm install ../../open-grove-agent-host-0.1.0-alpha.2.tgz
+npm install ../../open-grove-agent-host-0.1.0-alpha.3.tgz
 AGENT_HOST_CODEX=../../node_modules/.bin/codex npm start
 ```
 

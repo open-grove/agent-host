@@ -2,6 +2,7 @@ import { WebSocketServer } from "ws";
 import plugin from "../../dist/openclaw/plugin.js";
 export async function startOpenClawFixture({
   ignoreCancel = false,
+  cancelStatus = "aborted",
   pluginEnabled = true,
   canonicalize = false,
 } = {}) {
@@ -177,8 +178,8 @@ export async function startOpenClawFixture({
         }
         if (frame.method === "chat.abort") {
           if (!ignoreCancel && runs.has(p.runId))
-            runs.get(p.runId).status = "aborted";
-          return respond(true, { ok: true });
+            runs.get(p.runId).status = cancelStatus;
+          return respond(true, { ok: true, aborted: !ignoreCancel && runs.has(p.runId) });
         }
         if (frame.method === "chat.history")
           return respond(true, {
