@@ -1,6 +1,6 @@
 {
   "name": "@open-grove/agent-host",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Product-independent native Agent sessions, tools and interaction routing",
   "type": "module",
   "license": "Apache-2.0",

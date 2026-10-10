@@ -193,3 +193,25 @@ test("OpenClaw persists the canonical native key and refuses to recreate deleted
     await gateway.close();
   }
 });
+
+for (const ignoreCancel of [false, true]) {
+  test(`OpenClaw error after abort requires a native cancellation receipt (${ignoreCancel})`, async () => {
+    const gateway = await startOpenClawFixture({ cancelStatus: "error", ignoreCancel });
+    const agent = new OpenClawAgent({ ...gateway, cancellationGraceMs: 40 });
+    try {
+      const controller = new AbortController();
+      const events = [];
+      for await (const event of agent.run({ ...request, method: "agent", input: "HANG", signal: controller.signal })) {
+        events.push(event);
+        if (event.type === "session.bound") setTimeout(() => controller.abort(), 20);
+      }
+      assert.equal(events.at(-1).outcome.status, "cancelled");
+      assert.equal(events.at(-1).outcome.outcomeUnknown === true, ignoreCancel);
+      assert.equal(events.filter((event) => event.type === "turn.finished").length, 1);
+      assert.equal(gateway.calls.filter((call) => call.method === "chat.abort").length, 1);
+    } finally {
+      agent.close();
+      await gateway.close();
+    }
+  });
+}

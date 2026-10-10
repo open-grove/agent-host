@@ -313,16 +313,22 @@ export class OpenClawAgent {
       const waitController = new AbortController();
       let grace: ReturnType<typeof setTimeout> | undefined;
       let cancelFailure: unknown;
+      let cancellation: Promise<boolean> | undefined;
+      let cancelRunId: string | undefined;
       const abort = () => {
         if (!sent || settled) return;
-        void this.client
+        if (cancelRunId === nativeRunId) return;
+        cancelRunId = nativeRunId;
+        cancellation = this.client
           .request(
             "chat.abort",
             { sessionKey, runId: nativeRunId },
             { timeoutMs: 10_000 },
           )
+          .then((receipt) => object(receipt).aborted === true)
           .catch((error) => {
             cancelFailure = error;
+            return false;
           });
         grace ??= setTimeout(
           () =>
@@ -389,7 +395,12 @@ export class OpenClawAgent {
         if (!["timeout", "pending", "running", "working"].includes(status))
           break;
       }
-      settled = [
+      // agent.wait may report error for an aborted run; only the correlated
+      // native acknowledgement, not the caller's signal, confirms cancellation.
+      const nativeCanceled =
+        (await cancellation) === true ||
+        ["aborted", "cancelled", "canceled", "interrupted"].includes(status);
+      settled = nativeCanceled || [
         "ok",
         "complete",
         "completed",
@@ -401,10 +412,10 @@ export class OpenClawAgent {
         "error",
         "failed",
       ].includes(status);
-      outcome = terminalError
-        ? { status: "failed", error: terminalError }
-        : ["aborted", "cancelled", "canceled", "interrupted"].includes(status)
-          ? { status: "cancelled" }
+      outcome = nativeCanceled
+        ? { status: "cancelled" }
+        : terminalError
+          ? { status: "failed", error: terminalError }
           : ["ok", "complete", "completed", "success"].includes(status)
             ? { status: "completed" }
             : {

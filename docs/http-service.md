@@ -9,7 +9,7 @@ The service and browser client port the reusable integration from [OpenGrove PR 
 
 ## Start a service
 
-Node.js 24+ is required. From this repository, build an archive with `npm pack`, then install that archive in your consumer. The current archive is `open-grove-agent-host-0.1.0-alpha.2.tgz`; it is not published to the npm registry.
+Node.js 24+ is required. From this repository, build an archive with `npm pack`, then install that archive in your consumer. The current archive is `open-grove-agent-host-0.1.0-alpha.3.tgz`; it is not published to the npm registry.
 
 Create `host.json`:
 
